@@ -1,13 +1,13 @@
 /* ============================================================
    FILE: assets/css/style.css
    MÔ TẢ: Hệ thống Style CSS cho website tuyển dụng JobFinder
-   Màu chủ đạo: Xanh dương LX 2732 P (#0052cc) và Trắng (#ffffff)
+   Màu chủ đạo: Xanh biển đậm (#0052cc) và Trắng (#ffffff)
    ============================================================ */
 
 /* --- 1. RESET & BIẾN MÀU SẮC --- */
-/* Chuẩn hóa thương hiệu: tông xanh LX 2732 P được khai báo duy nhất ở đây */
+/* Chuẩn hóa thương hiệu: tông xanh biển được khai báo duy nhất ở đây */
 :root {
-  /* Bảng màu chủ đạo (LX 2732 P) */
+  /* Bảng màu chủ đạo (Deep Ocean Blue) */
   --primary-color: #0052cc;
   --primary-hover: #0747a6;
   --primary-light: #e6effc;
@@ -31,7 +31,7 @@
   --bg-white: #ffffff;
   --border-color: #dfe1e6;
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --hover-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.08);
+  --hover-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.12);
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -381,9 +381,9 @@ navbar,
 }
 
 .alert-info {
-  background-color: #cff4fc;
-  color: #055160;
-  border: 1px solid #b6effb;
+  background-color: #ccf0ff;
+  color: #0b4f7d;
+  border: 1px solid #a6dcf5;
 }
 
 .alert-warning {
@@ -1095,7 +1095,7 @@ textarea.form-control {
 
 /* --- 15. FOOTER --- */
 .footer {
-  background-color: #1e293b;
+  background-color: #0a2c50;
   color: #cbd5e1;
   margin-top: auto;
   font-size: 0.92rem;
@@ -1191,7 +1191,7 @@ textarea.form-control {
 }
 
 .footer-bottom {
-  background-color: #0f172a;
+  background-color: #061e38;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding: 20px 0;
 }
