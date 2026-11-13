@@ -5,6 +5,7 @@
    ============================================================ */
 
 /* --- 1. RESET & BIẾN MÀU SẮC --- */
+/* Chuẩn hóa thương hiệu: tông xanh LX 2732 P được khai báo duy nhất ở đây */
 :root {
   /* Bảng màu chủ đạo (LX 2732 P) */
   --primary-color: #0052cc;
@@ -36,6 +37,10 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --transition: all 0.2s ease-in-out;
+
+  /* Font hệ thống: hiển thị ổn định, dễ đọc trên mọi thiết bị */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
@@ -54,7 +59,7 @@ body {
     "Helvetica Neue",
     Arial,
     sans-serif;
-  color: var(--text-color);
+  color: var(--text-dark);
   background-color: var(--bg-light);
   line-height: 1.5;
   display: flex;
@@ -111,14 +116,14 @@ img {
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
   color: #ffffff;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
-  border-color: var(--primary-hover);
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
   color: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
@@ -168,8 +173,9 @@ img {
 }
 
 /* --- 4. HEADER & NAVBAR --- */
+navbar,
 .navbar {
-  background-color: var(--bg-white);
+  background-color: var(--bg-white) !important;
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
@@ -184,13 +190,14 @@ img {
   height: 72px;
 }
 
-.logo {
+.logo,
+.navbar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--primary-color) !important;
 }
 
 .logo-icon {
@@ -221,8 +228,9 @@ img {
   gap: 20px;
 }
 
-.nav-links a {
-  color: var(--text-dark);
+.nav-links a,
+.nav-link {
+  color: var(--text-dark) !important;
   font-weight: 500;
   font-size: 0.95rem;
   padding: 8px 12px;
@@ -233,8 +241,9 @@ img {
   transition: color 0.2s;
 }
 
-.nav-links a:hover {
-  color: var(--primary-color);
+.nav-links a:hover,
+.nav-link:hover {
+  color: var(--primary-color) !important;
 }
 
 .nav-links a.active {
@@ -621,6 +630,18 @@ img {
   color: var(--primary-color);
 }
 
+/* Alias dùng khi thẻ việc làm gắn class trực tiếp lên tiêu đề */
+.job-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-decoration: none;
+}
+
+.job-title:hover {
+  color: var(--primary-color);
+}
+
 .job-company {
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -967,7 +988,9 @@ img {
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: var(--text-dark);
   font-family: inherit;
   font-size: 0.95rem;
   outline: none;
@@ -977,6 +1000,14 @@ img {
 .form-control:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+  outline: none;
+}
+
+/* Thanh tìm kiếm: đồng bộ bo góc & màu viền với form */
+.search-input-group input,
+.search-input-group select {
+  border-radius: 6px;
+  color: var(--text-dark);
 }
 
 textarea.form-control {
