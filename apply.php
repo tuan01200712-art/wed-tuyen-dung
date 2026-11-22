@@ -1,201 +1,205 @@
 <?php
-
 /**
  * ============================================================
  * FILE: apply.php
- * MÔ TẢ: Trang nộp đơn ứng tuyển công việc
- * - Yêu cầu đăng nhập trước khi ứng tuyển (nếu chưa đăng nhập -> chuyển sang login.php)
- * - Hiển thị tóm tắt thông tin công việc đang ứng tuyển
- * - Nhập thư giới thiệu bản thân (Cover letter)
- * - Kiểm tra không cho phép ứng tuyển trùng lặp một công việc nhiều lần
- * - Lưu bản ghi vào bảng `applications` trong MySQL
+ * MÔ TẢ: Trang nộp đơn ứng tuyển công việc kèm chọn CV
  * ============================================================
  */
 
-// Nạp kết nối cơ sở dữ liệu
 require_once 'config/database.php';
 
-// Bắt đầu session nếu chưa có
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1. Kiểm tra đăng nhập: Chỉ cho phép người dùng đã đăng nhập ứng tuyển
 $job_id = isset($_GET['job_id']) ? (int)$_GET['job_id'] : (isset($_POST['job_id']) ? (int)$_POST['job_id'] : 0);
 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['flash_message'] = 'Vui lòng đăng nhập tài khoản trước khi ứng tuyển công việc.';
     $_SESSION['flash_type'] = 'warning';
-
-    // Lưu lại URL để sau khi đăng nhập sẽ tự động quay lại trang apply
-    $redirect_url = 'apply.php?job_id=' . $job_id;
-    header('Location: login.php?redirect=' . urlencode($redirect_url));
+    header('Location: login.php?redirect=' . urlencode('apply.php?job_id=' . $job_id));
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int)$_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 $user_email = $_SESSION['user_email'];
 
-// Kiểm tra mã công việc hợp lệ
 if ($job_id <= 0) {
     header('Location: jobs.php');
     exit;
 }
 
-// 2. Lấy thông tin công việc từ MySQL
 $stmt = $pdo->prepare("SELECT * FROM jobs WHERE id = :id AND status = 'active' LIMIT 1");
 $stmt->execute([':id' => $job_id]);
 $job = $stmt->fetch();
 
 if (!$job) {
-    $_SESSION['flash_message'] = 'Công việc không tồn tại hoặc đã hết hạn ứng tuyển.';
+    $_SESSION['flash_message'] = 'Công việc không tồn tại hoặc đã dừng nhận hồ sơ.';
     $_SESSION['flash_type'] = 'danger';
     header('Location: jobs.php');
     exit;
 }
 
-// 3. Kiểm tra xem người dùng đã từng ứng tuyển công việc này chưa
+// Kiểm tra ứng tuyển trùng lặp
 $check_stmt = $pdo->prepare("SELECT id, created_at FROM applications WHERE user_id = :user_id AND job_id = :job_id LIMIT 1");
-$check_stmt->execute([
-    ':user_id' => $user_id,
-    ':job_id'  => $job_id
-]);
+$check_stmt->execute([':user_id' => $user_id, ':job_id' => $job_id]);
 $existing_app = $check_stmt->fetch();
 
 if ($existing_app) {
-    // Đã ứng tuyển trước đó, thông báo và chuyển sang trang danh sách đã ứng tuyển
-    $_SESSION['flash_message'] = 'Bạn đã nộp hồ sơ ứng tuyển vào vị trí này vào ngày ' . date('d/m/Y', strtotime($existing_app['created_at'])) . '.';
+    $_SESSION['flash_message'] = 'Bạn đã nộp hồ sơ vào vị trí này vào ngày ' . date('d/m/Y', strtotime($existing_app['created_at'])) . '.';
     $_SESSION['flash_type'] = 'info';
     header('Location: my-applications.php');
     exit;
 }
 
-$page_title = 'Ứng tuyển: ' . $job['title'];
+// Lấy danh sách CV của ứng viên
+$cv_stmt = $pdo->prepare("SELECT id, title, is_default, updated_at, created_at FROM cvs WHERE user_id = ? ORDER BY is_default DESC, created_at DESC");
+$cv_stmt->execute([$user_id]);
+$user_cvs = $cv_stmt->fetchAll();
+
+$page_title = 'Nộp Hồ Sơ — ' . $job['title'];
 $errors = [];
 $cover_letter = '';
+$selected_cv_id = !empty($user_cvs) ? (int)$user_cvs[0]['id'] : null;
 
-// 4. Xử lý khi người dùng nhấn nút "Gửi hồ sơ ứng tuyển" (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cover_letter = trim($_POST['cover_letter'] ?? '');
+    $post_cv_id = !empty($_POST['cv_id']) ? (int)$_POST['cv_id'] : null;
 
-    // Kiểm tra độ dài thư giới thiệu (tùy chọn nhưng nếu nhập thì không quá ngắn)
     if (empty($cover_letter)) {
         $errors[] = 'Vui lòng viết một vài dòng thư giới thiệu ngắn về bản thân và lý do bạn phù hợp với công việc.';
-    } elseif (mb_strlen($cover_letter) < 20) {
-        $errors[] = 'Thư giới thiệu nên có ít nhất 20 ký tự để nhà tuyển dụng hiểu rõ hơn về bạn.';
     }
 
-    // Nếu không có lỗi, tiến hành lưu vào MySQL
     if (empty($errors)) {
         try {
             $insert_stmt = $pdo->prepare("
-                INSERT INTO applications (user_id, job_id, cover_letter, status, created_at)
-                VALUES (:user_id, :job_id, :cover_letter, 'Đã nộp hồ sơ', NOW())
+                INSERT INTO applications (user_id, job_id, cv_id, cover_letter, status, created_at)
+                VALUES (:user_id, :job_id, :cv_id, :cover_letter, 'Đã nộp hồ sơ', NOW())
             ");
             $insert_stmt->execute([
                 ':user_id'      => $user_id,
                 ':job_id'       => $job_id,
+                ':cv_id'        => $post_cv_id,
                 ':cover_letter' => $cover_letter
             ]);
 
-            // Thiết lập thông báo thành công
-            $_SESSION['flash_message'] = 'Ứng tuyển thành công! Nhà tuyển dụng sẽ xem xét hồ sơ của bạn.';
+            $_SESSION['flash_message'] = 'Nộp hồ sơ thành công! Nhà tuyển dụng sẽ xem xét và phản hồi trong thời gian sớm nhất.';
             $_SESSION['flash_type'] = 'success';
-
-            // Chuyển hướng sang trang danh sách công việc đã ứng tuyển
             header('Location: my-applications.php');
             exit;
         } catch (PDOException $e) {
-            // Kiểm tra lỗi trùng lặp khóa duy nhất (UNIQUE constraint)
-            if ($e->getCode() == 23000) {
-                $errors[] = 'Bạn đã ứng tuyển công việc này rồi.';
-            } else {
-                $errors[] = 'Có lỗi xảy ra khi lưu thông tin ứng tuyển. Vui lòng thử lại.';
-            }
+            $errors[] = 'Đã xảy ra lỗi khi lưu hồ sơ. Vui lòng thử lại sau.';
         }
     }
 }
 
-// Nạp Header
 require_once 'includes/header.php';
 ?>
 
-<div class="container">
-    <div class="auth-wrapper" style="padding: 30px 0;">
-        <div class="auth-card" style="max-width: 650px;">
-            <div class="auth-header">
-                <h2>Ứng Tuyển Công Việc</h2>
-                <p>Nộp hồ sơ trực tiếp đến nhà tuyển dụng <strong><?php echo htmlspecialchars($job['company']); ?></strong></p>
+<section class="section" style="padding-top:40px;">
+    <div class="container" style="max-width:760px;">
+        <!-- Header tóm tắt vị trí -->
+        <div style="background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--line); padding:28px; margin-bottom:28px;">
+            <span class="section-eyebrow">Ứng tuyển trực tiếp</span>
+            <h1 style="font-size:24px; font-weight:800; letter-spacing:-0.025em; color:var(--ink); margin-bottom:6px;">
+                <?php echo htmlspecialchars($job['title']); ?>
+            </h1>
+            <div style="font-size:14px; font-weight:600; color:var(--muted); margin-bottom:16px;">
+                <?php echo htmlspecialchars($job['company']); ?> &middot; <?php echo htmlspecialchars($job['location']); ?>
             </div>
-
-            <!-- Tóm tắt vị trí ứng tuyển -->
-            <div style="background: var(--bg-light); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 25px;">
-                <h4 style="font-size: 1.15rem; color: var(--primary-dark); margin-bottom: 6px;">
-                    <?php echo htmlspecialchars($job['title']); ?>
-                </h4>
-                <div style="font-size: 0.9rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 15px;">
-                    <span><i class="fa-solid fa-building"></i> <?php echo htmlspecialchars($job['company']); ?></span>
-                    <span><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($job['location']); ?></span>
-                    <span><i class="fa-solid fa-money-bill-wave"></i> <?php echo htmlspecialchars($job['salary']); ?></span>
-                </div>
+            <div style="display:flex; gap:8px;">
+                <span class="chip" style="background:var(--status-success-bg); color:var(--status-success-text); font-weight:700;">
+                    <?php echo htmlspecialchars($job['salary']); ?>
+                </span>
+                <span class="chip"><?php echo htmlspecialchars($job['job_type']); ?></span>
             </div>
+        </div>
 
-            <!-- Hiển thị lỗi nếu có -->
+        <!-- Form nộp hồ sơ -->
+        <div class="form-card">
             <?php if (!empty($errors)): ?>
-                <div class="alert alert-danger">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <div>
-                        <?php foreach ($errors as $error): ?>
-                            <div><?php echo htmlspecialchars($error); ?></div>
-                        <?php endforeach; ?>
-                    </div>
+                <div class="flash-bar flash--danger">
+                    <?php echo htmlspecialchars($errors[0]); ?>
                 </div>
             <?php endif; ?>
 
-            <!-- Form Ứng tuyển -->
-            <form action="apply.php" method="POST" class="auth-form">
-                <input type="hidden" name="job_id" value="<?php echo (int)$job['id']; ?>">
+            <form action="apply.php" method="POST">
+                <input type="hidden" name="job_id" value="<?php echo $job_id; ?>">
 
-                <!-- Thông tin ứng viên (tự động điền từ tài khoản đã đăng nhập) -->
-                <div class="form-group">
-                    <label>Ứng viên nộp hồ sơ</label>
-                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($user_name); ?>" readonly style="background-color: #e9ecef;">
+                <!-- Thông tin ứng viên -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Họ và tên ứng viên</label>
+                        <input type="text" class="form-control" value="<?php echo htmlspecialchars($user_name); ?>" readonly style="background:var(--surface-subtle); color:var(--muted);">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Email liên hệ</label>
+                        <input type="email" class="form-control" value="<?php echo htmlspecialchars($user_email); ?>" readonly style="background:var(--surface-subtle); color:var(--muted);">
+                    </div>
                 </div>
 
+                <!-- Chọn CV đính kèm -->
                 <div class="form-group">
-                    <label>Địa chỉ Email liên hệ</label>
-                    <input type="email" class="form-control" value="<?php echo htmlspecialchars($user_email); ?>" readonly style="background-color: #e9ecef;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin-bottom:0;">Đính kèm hồ sơ CV</label>
+                        <a href="cv-builder.php" target="_blank" style="font-size:12px; font-weight:700; color:var(--ink); text-decoration:underline;">+ Tạo CV mới</a>
+                    </div>
+
+                    <?php if (empty($user_cvs)): ?>
+                        <div style="padding:16px; border:1px dashed var(--line); border-radius:var(--radius-md); background:var(--surface-subtle); margin-bottom:12px;">
+                            <div style="font-size:13px; color:var(--ink-secondary); margin-bottom:4px;">Bạn chưa có hồ sơ CV trên JobFinder.</div>
+                            <div style="font-size:12px; color:var(--muted);">Bạn có thể nộp kèm thư giới thiệu ngay bên dưới hoặc <a href="cv-builder.php" target="_blank" style="color:var(--ink); text-decoration:underline; font-weight:600;">tạo CV trực tuyến</a> trước khi nộp.</div>
+                        </div>
+                    <?php else: ?>
+                        <div class="radio-cards-grid" style="grid-template-columns:1fr; margin-bottom:16px;">
+                            <?php foreach ($user_cvs as $i => $cv): ?>
+                                <label class="radio-card">
+                                    <input type="radio" name="cv_id" value="<?php echo $cv['id']; ?>" <?php echo ($i === 0) ? 'checked' : ''; ?>>
+                                    <div class="radio-card-content" style="flex:1;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span class="radio-card-title"><?php echo htmlspecialchars($cv['title']); ?></span>
+                                            <?php if ($cv['is_default']): ?>
+                                                <span class="badge badge--active" style="font-size:10px;">Mặc định</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="radio-card-desc">
+                                            Cập nhật: <?php echo date('d/m/Y', strtotime($cv['updated_at'] ?? $cv['created_at'])); ?> &middot; 
+                                            <a href="cv-preview.php?id=<?php echo $cv['id']; ?>" target="_blank" style="color:var(--ink); text-decoration:underline;">Xem trước ↗</a>
+                                        </div>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+
+                            <label class="radio-card">
+                                <input type="radio" name="cv_id" value="">
+                                <div class="radio-card-content">
+                                    <span class="radio-card-title">Không đính kèm CV</span>
+                                    <div class="radio-card-desc">Chỉ gửi thư giới thiệu bản thân trực tiếp đến nhà tuyển dụng.</div>
+                                </div>
+                            </label>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Thư giới thiệu (Cover Letter) -->
                 <div class="form-group">
-                    <label for="cover_letter">Thư giới thiệu bản thân <span class="required">*</span></label>
-                    <textarea
-                        name="cover_letter"
-                        id="cover_letter"
-                        class="form-control"
-                        rows="6"
-                        placeholder="Hãy viết ngắn gọn về kinh nghiệm, kỹ năng nổi bật của bạn và lý do vì sao bạn là ứng viên phù hợp nhất cho vị trí này..."
-                        required><?php echo htmlspecialchars($cover_letter); ?></textarea>
-                    <p class="form-hint">Một bức thư giới thiệu ấn tượng và chân thành sẽ giúp bạn ghi điểm tuyệt đối trong mắt nhà tuyển dụng.</p>
+                    <label class="form-label">
+                        Thư giới thiệu bản thân <span style="color:var(--status-danger-text);">*</span>
+                        <span class="form-label-desc">(Lý do bạn phù hợp, dự án đã làm hoặc định hướng phát triển)</span>
+                    </label>
+                    <textarea name="cover_letter" class="form-control form-textarea" placeholder="Kính gửi bộ phận tuyển dụng, tôi mong muốn ứng tuyển vào vị trí này vì..."><?php echo htmlspecialchars($cover_letter); ?></textarea>
                 </div>
 
-                <!-- Nút thao tác -->
-                <div style="display: flex; gap: 15px; margin-top: 25px;">
-                    <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>" class="btn btn-light" style="flex: 1;">
-                        <i class="fa-solid fa-arrow-left"></i> Quay Lại
-                    </a>
-                    <button type="submit" class="btn btn-primary" style="flex: 2;">
-                        <i class="fa-solid fa-paper-plane"></i> Gửi Hồ Sơ Ứng Tuyển
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:28px;">
+                    <a href="job-detail.php?id=<?php echo $job_id; ?>" class="btn btn-secondary">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary" style="padding:14px 28px;">
+                        Gửi hồ sơ ứng tuyển →
                     </button>
                 </div>
             </form>
         </div>
     </div>
-</div>
+</section>
 
-<?php
-// Nạp Footer
-require_once 'includes/footer.php';
-?>
+<?php require_once 'includes/footer.php'; ?>

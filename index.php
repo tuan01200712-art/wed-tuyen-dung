@@ -1,22 +1,16 @@
 <?php
-
 /**
  * ============================================================
  * FILE: index.php
- * MÔ TẢ: Trang chủ website tuyển dụng JobFinder
- * - Banner giới thiệu & Thanh tìm kiếm việc làm nhanh
- * - Danh sách việc làm nổi bật (mới nhất từ MySQL)
- * - Danh sách các ngành nghề phổ biến (kèm số lượng công việc)
- * - Giới thiệu các tiện ích của JobFinder
+ * MÔ TẢ: Trang chủ JobFinder — Chuẩn thẩm mỹ Apple Design & Web 2026
  * ============================================================
  */
 
-// Nạp kết nối cơ sở dữ liệu
 require_once 'config/database.php';
 
-$page_title = 'Trang chủ - Cổng Việc Làm Hàng Đầu';
+$page_title = 'Khám Phá Cơ Hội Nghề Nghiệp';
 
-// 1. Lấy danh sách việc làm nổi bật (6 công việc mới nhất có status = active)
+// 1. Lấy danh sách việc làm mới nhất
 try {
     $featured_stmt = $pdo->query("
         SELECT id, title, company, location, category, salary, job_type, created_at 
@@ -30,7 +24,7 @@ try {
     $featured_jobs = [];
 }
 
-// 2. Lấy thống kê số lượng công việc theo ngành nghề phổ biến
+// 2. Lấy thống kê số lượng công việc theo ngành nghề
 try {
     $cat_stmt = $pdo->query("
         SELECT category, COUNT(id) as total_jobs 
@@ -38,14 +32,14 @@ try {
         WHERE status = 'active' 
         GROUP BY category 
         ORDER BY total_jobs DESC 
-        LIMIT 8
+        LIMIT 6
     ");
     $categories = $cat_stmt->fetchAll();
 } catch (PDOException $e) {
     $categories = [];
 }
 
-// 3. Lấy danh sách địa điểm duy nhất để đưa vào dropdown tìm kiếm
+// 3. Lấy danh sách địa điểm phục vụ bộ lọc tìm kiếm
 try {
     $loc_stmt = $pdo->query("SELECT DISTINCT location FROM jobs WHERE status = 'active' ORDER BY location ASC");
     $locations = $loc_stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -53,224 +47,257 @@ try {
     $locations = [];
 }
 
-// Mảng icon đại diện cho từng ngành nghề
-$category_icons = [
-    'Công nghệ thông tin' => 'fa-laptop-code',
-    'Marketing'           => 'fa-bullhorn',
-    'Thiết kế đồ họa'     => 'fa-palette',
-    'Tài chính - Kế toán' => 'fa-calculator',
-    'Nhân sự'             => 'fa-people-roof',
-    'Kinh doanh - Bán hàng' => 'fa-chart-line',
-    'Ngân hàng - Dữ liệu' => 'fa-database',
-    'Giáo dục - Đào tạo'  => 'fa-graduation-cap',
-    'Dịch vụ khách hàng'  => 'fa-headset',
-];
-
-// Nạp Header
 require_once 'includes/header.php';
 ?>
 
-<!-- 1. Hero Section & Banner Tìm Kiếm -->
-<section class="hero-section">
-    <div class="container hero-content">
-        <div class="hero-badge">
-            <i class="fa-solid fa-fire"></i> Hơn 1,000+ cơ hội việc làm đang chờ đón bạn
+<!-- 1. HERO SECTION (CHUẨN APPLE TECH 2026) -->
+<section class="hero-clean">
+    <div class="container hero-grid">
+        <div class="hero-content">
+            <div class="hero-pill">
+                <span class="hero-pill-badge">2026</span>
+                Cổng tuyển dụng thông minh &middot; Minh bạch & Trực tiếp
+            </div>
+            
+            <h1 class="hero-heading">
+                Tìm việc chuẩn xác.<br>
+                Ứng tuyển <span class="mark">tức thì</span>.
+            </h1>
+            
+            <p class="hero-subheading">
+                Nền tảng kết nối ứng viên chất lượng với doanh nghiệp hàng đầu tại Việt Nam. Không thủ tục rườm rà, tập trung vào năng lực và thư giới thiệu thực chất.
+            </p>
+
+            <!-- Khung tìm kiếm thông minh tích hợp -->
+            <div class="smart-search-card">
+                <form action="jobs.php" method="GET" class="search-form-row">
+                    <div class="search-field">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" name="keyword" class="search-input" placeholder="Vị trí, kỹ năng hoặc công ty...">
+                    </div>
+
+                    <div class="search-field">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <select name="location" class="search-select">
+                            <option value="">Tất cả địa điểm</option>
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?php echo htmlspecialchars($loc); ?>"><?php echo htmlspecialchars($loc); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        Tìm việc →
+                    </button>
+                </form>
+            </div>
         </div>
-        <h1 class="hero-title">Khám Phá Công Việc Mơ Ước<br>Phát Triển Sự Nghiệp Cùng JobFinder</h1>
-        <p class="hero-subtitle">Cầu nối vững chắc giữa ứng viên tài năng và hàng ngàn doanh nghiệp hàng đầu tại Việt Nam</p>
 
-        <!-- Khung tìm kiếm việc làm nhanh -->
-        <div class="search-box-card">
-            <form action="jobs.php" method="GET" class="hero-search-form">
-                <!-- Từ khóa -->
-                <div class="search-input-group">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" name="keyword" placeholder="Tên công việc, vị trí, công ty...">
+        <!-- Khung xem trước trực quan (Live Preview Frame) -->
+        <div class="hero-preview">
+            <div class="preview-window">
+                <div class="window-header">
+                    <div class="window-dots">
+                        <span class="window-dot" style="background:#ff5f56;"></span>
+                        <span class="window-dot" style="background:#ffbd2e;"></span>
+                        <span class="window-dot" style="background:#27c93f;"></span>
+                    </div>
+                    <span class="window-badge">Hồ sơ ứng tuyển trực tiếp</span>
                 </div>
 
-                <!-- Địa điểm -->
-                <div class="search-input-group">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <select name="location">
-                        <option value="">Tất cả địa điểm</option>
-                        <?php foreach ($locations as $loc): ?>
-                            <option value="<?php echo htmlspecialchars($loc); ?>"><?php echo htmlspecialchars($loc); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <!-- Thẻ việc làm thực tế -->
+                <div class="preview-job-item">
+                    <div class="preview-job-top">
+                        <div class="preview-avatar">FS</div>
+                        <div>
+                            <div class="preview-title">Senior PHP / Backend Engineer</div>
+                            <div class="preview-company">FPT Software &middot; Cầu Giấy, Hà Nội</div>
+                        </div>
+                    </div>
+                    <div class="preview-meta">
+                        <span class="preview-salary">20 - 35 triệu</span>
+                        <span class="chip">Toàn thời gian</span>
+                        <span class="chip">2 - 3 năm</span>
+                    </div>
                 </div>
 
-                <!-- Ngành nghề -->
-                <div class="search-input-group">
-                    <i class="fa-solid fa-layer-group"></i>
-                    <select name="category">
-                        <option value="">Tất cả ngành nghề</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?php echo htmlspecialchars($cat['category']); ?>">
-                                <?php echo htmlspecialchars($cat['category']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <!-- Thẻ theo dõi ứng viên -->
+                <div class="preview-applicant-chip">
+                    <div class="applicant-left">
+                        <span class="status-dot"></span>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:var(--ink);">Nguyễn Văn An &middot; Đã nộp CV</div>
+                            <div style="font-size:11px; color:var(--muted);">Kèm Thư giới thiệu &middot; Cập nhật 10 phút trước</div>
+                        </div>
+                    </div>
+                    <span class="badge badge--active" style="font-size:11px;">Đang xét duyệt</span>
                 </div>
-
-                <!-- Nút tìm kiếm -->
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fa-solid fa-magnifying-glass"></i> Tìm Việc Ngay
-                </button>
-            </form>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- 2. Danh Mục Ngành Nghề Phổ Biến -->
+<!-- 2. BENTO GRID (HIỆN ĐẠI, KHÔNG TRÙNG LẶP RẬP KHUÔN) -->
 <section class="section">
     <div class="container">
         <div class="section-header">
-            <div>
-                <h2 class="section-title">Ngành Nghề Phổ Biến</h2>
-                <p class="section-subtitle">Lựa chọn ngành nghề phù hợp với năng lực và định hướng tương lai của bạn</p>
+            <div class="section-header__left">
+                <span class="section-eyebrow">Hệ thống tối ưu</span>
+                <h2 class="section-title">Thiết kế cho hiệu suất ứng tuyển và tuyển dụng.</h2>
+                <p class="section-desc">Mọi tính năng được xây dựng nhằm loại bỏ sự phức tạp, giúp bạn đạt được kết quả nhanh nhất.</p>
             </div>
-            <a href="jobs.php" class="btn btn-outline">
-                Xem tất cả việc làm <i class="fa-solid fa-arrow-right"></i>
-            </a>
         </div>
 
-        <div class="categories-grid">
-            <?php if (!empty($categories)): ?>
-                <?php foreach ($categories as $cat): ?>
-                    <?php
-                    $cat_name = $cat['category'];
-                    $icon = $category_icons[$cat_name] ?? 'fa-briefcase';
-                    ?>
-                    <a href="jobs.php?category=<?php echo urlencode($cat_name); ?>" class="category-card">
-                        <div class="category-icon">
-                            <i class="fa-solid <?php echo $icon; ?>"></i>
-                        </div>
-                        <div class="category-info">
-                            <h4><?php echo htmlspecialchars($cat_name); ?></h4>
-                            <p><?php echo (int)$cat['total_jobs']; ?> vị trí đang tuyển</p>
-                        </div>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <p class="text-muted">Chưa có dữ liệu ngành nghề.</p>
-            <?php endif; ?>
+        <div class="bento-grid">
+            <!-- Bento 1: Large (7 cols) -->
+            <div class="bento-card bento-card--large">
+                <div>
+                    <span class="bento-tag">Trình tạo hồ sơ</span>
+                    <h3 class="bento-title">Tạo CV chuyên nghiệp trong 5 phút.</h3>
+                    <p class="bento-desc">Soạn thảo học vấn, kinh nghiệm và kỹ năng với chế độ xem trước trực tiếp. Tự động lưu và đính kèm ngay khi ứng tuyển.</p>
+                </div>
+                <div class="bento-visual" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:700;">Hồ sơ Fullstack Developer</div>
+                        <div style="font-size:11px; color:var(--muted);">Đã hoàn thiện 100% &middot; Sẵn sàng ứng tuyển</div>
+                    </div>
+                    <a href="cv-builder.php" class="btn btn-sm btn-dark">Tạo CV ngay →</a>
+                </div>
+            </div>
+
+            <!-- Bento 2: Medium (5 cols) -->
+            <div class="bento-card bento-card--medium">
+                <div>
+                    <span class="bento-tag">Minh bạch</span>
+                    <h3 class="bento-title">Thông tin rõ ràng, không giấu lương.</h3>
+                    <p class="bento-desc">Mọi vị trí tuyển dụng đều công khai khoảng lương, chế độ làm việc và địa điểm cụ thể.</p>
+                </div>
+                <div class="bento-visual">
+                    <div class="bento-metric">100%</div>
+                    <div class="bento-metric-label">Tin tuyển dụng có công khai mức lương thực tế</div>
+                </div>
+            </div>
+
+            <!-- Bento 3: Medium (5 cols) -->
+            <div class="bento-card bento-card--medium">
+                <div>
+                    <span class="bento-tag">Tiến độ hồ sơ</span>
+                    <h3 class="bento-title">Nắm rõ trạng thái xét duyệt.</h3>
+                    <p class="bento-desc">Theo dõi thời gian thực: Đã nộp, Đang xét duyệt, Phù hợp hoặc Từ chối ngay trong trang cá nhân.</p>
+                </div>
+                <div class="bento-visual" style="display:flex; gap:8px;">
+                    <span class="badge badge--pending">Đang xét</span>
+                    <span class="badge badge--success">Phù hợp ✓</span>
+                    <span class="badge badge--danger">Từ chối</span>
+                </div>
+            </div>
+
+            <!-- Bento 4: Large (7 cols) -->
+            <div class="bento-card bento-card--large">
+                <div>
+                    <span class="bento-tag">Dành cho Doanh nghiệp</span>
+                    <h3 class="bento-title">Cổng tuyển dụng doanh nghiệp độc lập.</h3>
+                    <p class="bento-desc">Đăng tin tuyển dụng nhanh, quản lý danh sách hồ sơ ứng viên và cập nhật trạng thái tuyển dụng trong một màn hình duy nhất.</p>
+                </div>
+                <div class="bento-visual" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-size:13px; font-weight:700;">Tiếp cận ứng viên trẻ tiềm năng</div>
+                        <div style="font-size:11px; color:var(--muted);">Dành riêng cho HR & Quản lý tuyển dụng</div>
+                    </div>
+                    <a href="employer/dashboard.php" class="btn btn-sm btn-primary">Kênh Doanh nghiệp →</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- 3. Danh Sách Việc Làm Nổi Bật -->
-<section class="section" style="background-color: #f1f5f9;">
+<!-- 3. VIỆC LÀM MỚI NHẤT -->
+<section class="section section--sm">
     <div class="container">
         <div class="section-header">
             <div>
-                <h2 class="section-title">Việc Làm Nổi Bật Mới Nhất</h2>
-                <p class="section-subtitle">Cơ hội việc làm chất lượng cao từ các nhà tuyển dụng uy tín</p>
+                <span class="section-eyebrow">Cơ hội việc làm</span>
+                <h2 class="section-title">Vị trí mới cập nhật</h2>
             </div>
-            <a href="jobs.php" class="btn btn-primary">
-                Xem toàn bộ việc làm <i class="fa-solid fa-arrow-right"></i>
-            </a>
+            <a href="jobs.php" class="btn btn-secondary btn-sm">Xem tất cả việc làm →</a>
         </div>
 
-        <div class="jobs-grid">
+        <!-- Lọc nhanh theo ngành nghề dạng Pills -->
+        <div class="category-pills">
+            <a href="jobs.php" class="category-pill active">Tất cả ngành nghề</a>
+            <?php foreach ($categories as $cat): ?>
+                <a href="jobs.php?category=<?php echo urlencode($cat['category']); ?>" class="category-pill">
+                    <?php echo htmlspecialchars($cat['category']); ?> (<?php echo (int)$cat['total_jobs']; ?>)
+                </a>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Lưới thẻ việc làm -->
+        <div class="job-grid">
             <?php if (!empty($featured_jobs)): ?>
-                <?php foreach ($featured_jobs as $job): ?>
+                <?php foreach ($featured_jobs as $job): 
+                    $company_initial = mb_strtoupper(mb_substr($job['company'], 0, 2));
+                ?>
                     <div class="job-card">
                         <div>
-                            <div class="job-header">
-                                <div class="company-logo-placeholder">
-                                    <i class="fa-solid fa-building"></i>
+                            <div class="job-card__header">
+                                <div class="job-card__avatar">
+                                    <?php echo htmlspecialchars($company_initial); ?>
                                 </div>
-                                <div class="job-title-group">
-                                    <h3>
+                                <div class="job-card__info">
+                                    <h3 class="job-card__title">
                                         <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>">
                                             <?php echo htmlspecialchars($job['title']); ?>
                                         </a>
                                     </h3>
-                                    <span class="job-company"><?php echo htmlspecialchars($job['company']); ?></span>
+                                    <div class="job-card__company"><?php echo htmlspecialchars($job['company']); ?></div>
                                 </div>
                             </div>
 
-                            <div class="job-tags">
-                                <span class="tag tag-location">
-                                    <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($job['location']); ?>
-                                </span>
-                                <span class="tag tag-type">
-                                    <i class="fa-solid fa-clock"></i> <?php echo htmlspecialchars($job['job_type']); ?>
-                                </span>
-                                <span class="tag tag-category">
-                                    <i class="fa-solid fa-briefcase"></i> <?php echo htmlspecialchars($job['category']); ?>
-                                </span>
+                            <div class="job-card__chips">
+                                <span class="chip"><?php echo htmlspecialchars($job['location']); ?></span>
+                                <span class="chip"><?php echo htmlspecialchars($job['job_type']); ?></span>
+                                <span class="chip"><?php echo htmlspecialchars($job['category']); ?></span>
                             </div>
                         </div>
 
-                        <div class="job-footer">
-                            <div class="job-salary">
-                                <i class="fa-solid fa-money-bill-wave"></i> <?php echo htmlspecialchars($job['salary']); ?>
+                        <div class="job-card__footer">
+                            <div class="job-card__salary">
+                                <?php echo htmlspecialchars($job['salary']); ?>
                             </div>
-                            <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>" class="btn btn-outline">
-                                Chi tiết
+                            <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>" class="btn btn-secondary btn-sm">
+                                Chi tiết →
                             </a>
                         </div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <div class="empty-icon"><i class="fa-solid fa-box-open"></i></div>
-                    <h3>Chưa có công việc nào</h3>
-                    <p>Hệ thống hiện tại chưa có tin tuyển dụng nào được kích hoạt.</p>
+                <div style="grid-column: 1 / -1; padding: 48px; background: var(--surface); border-radius: var(--radius-lg); text-align: center; border: 1px solid var(--line);">
+                    <p class="text-muted">Hiện chưa có tin tuyển dụng nào được đăng tải.</p>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 </section>
 
-<!-- 4. Giới Thiệu Ngắn Về Website JobFinder -->
-<section class="section about-section">
+<!-- 4. CALL TO ACTION (TỐI GIẢN APPLE) -->
+<section class="section" style="padding-top:20px;">
     <div class="container">
-        <div class="section-header" style="justify-content: center; text-align: center;">
-            <div>
-                <h2 class="section-title">Tại Sao Nên Lựa Chọn JobFinder?</h2>
-                <p class="section-subtitle">Nền tảng hỗ trợ sinh viên và người đi làm kết nối doanh nghiệp nhanh chóng và hiệu quả</p>
-            </div>
-        </div>
-
-        <div class="features-grid">
-            <div class="feature-box">
-                <div class="feature-icon">
-                    <i class="fa-solid fa-magnifying-glass-location"></i>
-                </div>
-                <h4>Tìm Kiếm Đa Chiều</h4>
-                <p>Dễ dàng lọc công việc theo chức danh, địa điểm, mức lương và ngành nghề chỉ với vài cú nhấp chuột.</p>
-            </div>
-
-            <div class="feature-box">
-                <div class="feature-icon">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </div>
-                <h4>Ứng Tuyển Nhanh Chóng</h4>
-                <p>Nộp hồ sơ trực tuyến thuận tiện kèm thư giới thiệu bản thân trực tiếp đến nhà tuyển dụng.</p>
-            </div>
-
-            <div class="feature-box">
-                <div class="feature-icon">
-                    <i class="fa-solid fa-shield-halved"></i>
-                </div>
-                <h4>Thông Tin Xác Thực</h4>
-                <p>Các tin đăng tuyển đều được kiểm duyệt kỹ càng, đảm bảo môi trường làm việc minh bạch và an toàn.</p>
-            </div>
-
-            <div class="feature-box">
-                <div class="feature-icon">
-                    <i class="fa-solid fa-chart-pie"></i>
-                </div>
-                <h4>Theo Dõi Hồ Sơ</h4>
-                <p>Quản lý danh sách các công việc đã nộp và trạng thái xét duyệt hồ sơ dễ dàng trong trang cá nhân.</p>
+        <div style="background:var(--ink); color:var(--surface); border-radius:var(--radius-xl); padding:56px 40px; text-align:center; max-width:960px; margin:0 auto;">
+            <h2 style="color:var(--surface); font-size:clamp(28px, 3.5vw, 42px); font-weight:800; letter-spacing:-0.03em; margin-bottom:12px;">
+                Sẵn sàng phát triển sự nghiệp của bạn?
+            </h2>
+            <p style="color:rgba(255,255,255,0.75); font-size:16px; max-width:540px; margin:0 auto 32px; line-height:1.5;">
+                Khám phá hàng trăm cơ hội việc làm thực tế hoặc bắt đầu tuyển dụng nhân tài cùng JobFinder ngay hôm nay.
+            </p>
+            <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                <a href="jobs.php" class="btn btn-primary btn-lg">Khám phá việc làm →</a>
+                <a href="employer/job-create.php" class="btn btn-secondary btn-lg" style="background:transparent; color:#ffffff; border-color:rgba(255,255,255,0.3);">
+                    Đăng tin tuyển dụng
+                </a>
             </div>
         </div>
     </div>
 </section>
 
-<?php
-// Nạp Footer
-require_once 'includes/footer.php';
-?>
+<?php require_once 'includes/footer.php'; ?>

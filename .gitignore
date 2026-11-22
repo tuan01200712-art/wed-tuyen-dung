@@ -1,0 +1,6 @@
+# Cấu hình cục bộ riêng cho từng máy thành viên
+.impeccable/config.local.json
+
+# File rác hệ thống macOS
+.DS_Store
+__MACOSX/
