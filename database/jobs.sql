@@ -113,16 +113,16 @@ CREATE TABLE `applications` (
 
 -- ============================================================
 -- DỮ LIỆU KHỞI TẠO (Mật khẩu mẫu chung: 123456)
--- Hash bcrypt của '123456': $2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6
+-- Hash bcrypt chuẩn của '123456': $2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua
 -- ============================================================
 
 -- Tài khoản mẫu: 1 Admin, 2 Nhà tuyển dụng, 2 Ứng viên
 INSERT INTO `users` (`id`, `name`, `email`, `role`, `password`, `phone`, `is_active`, `created_at`) VALUES
-(1, 'Hệ Thống Quản Trị', 'admin@jobfinder.vn', 'admin', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6', '0901234567', 1, NOW()),
-(2, 'FPT Software HR', 'tuyendung@fpt.com', 'employer', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6', '02473007575', 1, NOW()),
-(3, 'VNG Corporation HR', 'careers@vng.com.vn', 'employer', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6', '02839623888', 1, NOW()),
-(4, 'Nguyễn Văn An', 'an.nguyen@gmail.com', 'candidate', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6', '0912345678', 1, NOW()),
-(5, 'Trần Thị Mai', 'mai.tran@gmail.com', 'candidate', '$2y$10$e0MYzXyjpJS7Pd0RVvHwHeT94eJ0TOnp3f5.c2W/0Q1e2m3n4o5p6', '0987654321', 1, NOW());
+(1, 'Hệ Thống Quản Trị', 'admin@jobfinder.vn', 'admin', '$2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua', '0901234567', 1, NOW()),
+(2, 'FPT Software HR', 'tuyendung@fpt.com', 'employer', '$2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua', '02473007575', 1, NOW()),
+(3, 'VNG Corporation HR', 'careers@vng.com.vn', 'employer', '$2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua', '02839623888', 1, NOW()),
+(4, 'Nguyễn Văn An', 'an.nguyen@gmail.com', 'candidate', '$2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua', '0912345678', 1, NOW()),
+(5, 'Trần Thị Mai', 'mai.tran@gmail.com', 'candidate', '$2y$10$DLBGh6ZLOJ1qNapr6JCTnOnZeJnLSy2ZYB5kFxw4m1ck5nsIahIua', '0987654321', 1, NOW());
 
 -- Hồ sơ công ty mẫu
 INSERT INTO `employer_profiles` (`id`, `user_id`, `company_name`, `website`, `industry`, `size`, `description`, `address`, `is_verified`) VALUES
