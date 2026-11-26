@@ -13,6 +13,11 @@
  * - Port: 3306
  */
 
+// Hiển thị lỗi PHP để dễ debug (tắt khi deploy production)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $host = '127.0.0.1'; // hoặc 'localhost'
 $db   = 'job_portal';
 $user = 'root';
@@ -30,6 +35,7 @@ $options = [
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+    require_once __DIR__ . '/../includes/functions.php';
 } catch (PDOException $e) {
     // Nếu chưa tạo database hoặc sai mật khẩu, hiển thị thông báo thân thiện
     die("

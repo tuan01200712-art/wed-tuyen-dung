@@ -64,7 +64,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deadline     = !empty($_POST['deadline']) ? $_POST['deadline'] : null;
     $description  = trim($_POST['description'] ?? '');
     $requirements = trim($_POST['requirements'] ?? '');
-    $status       = in_array($_POST['status'] ?? 'active', ['active', 'inactive', 'draft']) ? $_POST['status'] : 'active';
+    $benefits     = trim($_POST['benefits'] ?? '');
+    $level        = trim($_POST['level'] ?? ($job['level'] ?? 'Nhân viên'));
+    $quantity     = max(1, (int)($_POST['quantity'] ?? ($job['quantity'] ?? 1)));
+    $is_featured  = isset($_POST['is_featured']) ? 1 : 0;
+    $status       = in_array($_POST['status'] ?? 'active', ['active', 'pending', 'rejected', 'inactive', 'draft', 'expired']) ? $_POST['status'] : 'active';
     $emp_id       = !empty($_POST['employer_id']) ? (int)$_POST['employer_id'] : null;
 
     if (empty($title)) $errors[] = 'Tiêu đề không được để trống.';
@@ -76,28 +80,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             if ($is_create) {
                 $ins = $pdo->prepare("
-                    INSERT INTO jobs (employer_id, title, company, location, category, salary, salary_value, job_type, experience, deadline, description, requirements, status, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                    INSERT INTO jobs (employer_id, title, company, location, category, salary, salary_value, job_type, quantity, level, experience, deadline, description, requirements, benefits, is_featured, status, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
                 $ins->execute([
                     $emp_id, $title, $company, $location, $category,
-                    $salary, $salary_value, $job_type, $experience, $deadline,
-                    $description, $requirements, $status
+                    $salary, $salary_value, $job_type, $quantity, $level, $experience, $deadline,
+                    $description, $requirements, $benefits, $is_featured, $status
                 ]);
+                log_activity($pdo, $admin_id, 'JOB_CREATE', "Tạo tin tuyển dụng: {$title}");
                 $_SESSION['flash_message'] = 'Tạo tin tuyển dụng thành công.';
             } else {
                 $upd = $pdo->prepare("
                     UPDATE jobs SET 
                         employer_id = ?, title = ?, company = ?, location = ?, category = ?,
-                        salary = ?, salary_value = ?, job_type = ?, experience = ?, deadline = ?,
-                        description = ?, requirements = ?, status = ?
+                        salary = ?, salary_value = ?, job_type = ?, quantity = ?, level = ?, experience = ?, deadline = ?,
+                        description = ?, requirements = ?, benefits = ?, is_featured = ?, status = ?
                     WHERE id = ?
                 ");
                 $upd->execute([
                     $emp_id, $title, $company, $location, $category,
-                    $salary, $salary_value, $job_type, $experience, $deadline,
-                    $description, $requirements, $status, $job_id
+                    $salary, $salary_value, $job_type, $quantity, $level, $experience, $deadline,
+                    $description, $requirements, $benefits, $is_featured, $status, $job_id
                 ]);
+                log_activity($pdo, $admin_id, 'JOB_UPDATE', "Cập nhật tin ID #{$job_id}: {$title}");
                 $_SESSION['flash_message'] = 'Cập nhật tin tuyển dụng thành công.';
             }
             $_SESSION['flash_type'] = 'success';
@@ -109,11 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories_list = [
-    'Công nghệ thông tin', 'Marketing', 'Thiết kế đồ họa', 'Tài chính - Kế toán',
-    'Nhân sự', 'Kinh doanh - Bán hàng', 'Ngân hàng - Dữ liệu', 'Giáo dục - Đào tạo',
-    'Dịch vụ khách hàng', 'Khác'
-];
+$categories_list = array_column(get_categories($pdo), 'name');
+$locations_list = array_column(get_locations($pdo), 'name');
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -123,8 +126,13 @@ $categories_list = [
     <title><?= htmlspecialchars($page_title) ?> — JobFinder Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -134,7 +142,6 @@ $categories_list = [
     <main class="portal-main">
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Quản trị tin tuyển dụng</span>
                 <h1 class="section-title"><?= $is_create ? 'Thêm mới tin tuyển dụng' : 'Chỉnh sửa tin tuyển dụng' ?></h1>
             </div>
             <a href="jobs.php" class="btn btn-secondary btn-sm">← Quay lại danh sách</a>
@@ -175,7 +182,16 @@ $categories_list = [
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                     <div class="form-group">
                         <label class="form-label" for="location">Địa điểm làm việc <span style="color:var(--status-danger-text);">*</span></label>
-                        <input type="text" id="location" name="location" class="form-control" value="<?= htmlspecialchars($job['location']) ?>" required>
+                        <select id="location" name="location" class="form-control form-select" required>
+                            <?php if (!in_array($job['location'], $locations_list) && !empty($job['location'])): ?>
+                                <option value="<?= htmlspecialchars($job['location']) ?>" selected><?= htmlspecialchars($job['location']) ?></option>
+                            <?php endif; ?>
+                            <?php foreach ($locations_list as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc) ?>" <?= ($job['location'] === $loc) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($loc) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -202,7 +218,8 @@ $categories_list = [
                             <option value="Toàn thời gian" <?= ($job['job_type'] === 'Toàn thời gian') ? 'selected' : '' ?>>Toàn thời gian</option>
                             <option value="Bán thời gian" <?= ($job['job_type'] === 'Bán thời gian') ? 'selected' : '' ?>>Bán thời gian</option>
                             <option value="Thực tập" <?= ($job['job_type'] === 'Thực tập') ? 'selected' : '' ?>>Thực tập</option>
-                            <option value="Làm từ xa (Remote)" <?= ($job['job_type'] === 'Làm từ xa (Remote)') ? 'selected' : '' ?>>Làm từ xa (Remote)</option>
+                            <option value="Làm việc từ xa" <?= ($job['job_type'] === 'Làm việc từ xa' || $job['job_type'] === 'Làm từ xa (Remote)') ? 'selected' : '' ?>>Làm việc từ xa</option>
+                            <option value="Linh hoạt" <?= ($job['job_type'] === 'Linh hoạt') ? 'selected' : '' ?>>Linh hoạt</option>
                         </select>
                     </div>
 
@@ -223,11 +240,50 @@ $categories_list = [
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label" for="benefits">Quyền lợi & Đãi ngộ</label>
+                    <textarea id="benefits" name="benefits" class="form-control form-textarea" style="min-height:120px;"><?= htmlspecialchars($job['benefits'] ?? '') ?></textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                    <div class="form-group">
+                        <label class="form-label" for="quantity">Số lượng tuyển</label>
+                        <input type="number" id="quantity" name="quantity" class="form-control" min="1" value="<?= (int)($job['quantity'] ?? 1) ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="level">Cấp bậc</label>
+                        <select id="level" name="level" class="form-control form-select">
+                            <option value="Thực tập sinh" <?= (($job['level'] ?? '') === 'Thực tập sinh') ? 'selected' : '' ?>>Thực tập sinh</option>
+                            <option value="Nhân viên" <?= (($job['level'] ?? '') === 'Nhân viên') ? 'selected' : '' ?>>Nhân viên</option>
+                            <option value="Chuyên viên / Senior" <?= (($job['level'] ?? '') === 'Chuyên viên / Senior') ? 'selected' : '' ?>>Chuyên viên / Senior</option>
+                            <option value="Trưởng nhóm / Leader" <?= (($job['level'] ?? '') === 'Trưởng nhóm / Leader') ? 'selected' : '' ?>>Trưởng nhóm / Leader</option>
+                            <option value="Trưởng phòng / Manager" <?= (($job['level'] ?? '') === 'Trưởng phòng / Manager') ? 'selected' : '' ?>>Trưởng phòng / Manager</option>
+                            <option value="Giám đốc / Director" <?= (($job['level'] ?? '') === 'Giám đốc / Director') ? 'selected' : '' ?>>Giám đốc / Director</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                        <input type="checkbox" name="is_featured" value="1" <?= (!empty($job['is_featured'])) ? 'checked' : '' ?> style="width:18px; height:18px;">
+                        <span style="font-weight:700; color:var(--ink);">Đánh dấu là Tin Tuyển Dụng Nổi Bật (Featured Badge)</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Trạng thái phát hành</label>
-                    <div style="display:flex; gap:16px;">
+                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                             <input type="radio" name="status" value="active" <?= ($job['status'] === 'active') ? 'checked' : '' ?>>
                             <span>Công khai (Active)</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="radio" name="status" value="pending" <?= ($job['status'] === 'pending') ? 'checked' : '' ?>>
+                            <span>Chờ duyệt (Pending)</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="radio" name="status" value="rejected" <?= ($job['status'] === 'rejected') ? 'checked' : '' ?>>
+                            <span>Bị từ chối (Rejected)</span>
                         </label>
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                             <input type="radio" name="status" value="inactive" <?= ($job['status'] === 'inactive') ? 'checked' : '' ?>>

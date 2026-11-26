@@ -56,7 +56,6 @@ require_once 'includes/header.php';
     <div class="container" style="max-width:580px;">
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Tài khoản</span>
                 <h1 class="section-title">Cài đặt thông tin</h1>
             </div>
         </div>

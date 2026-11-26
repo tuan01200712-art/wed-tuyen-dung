@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00875A"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#g)"/>
+  <path d="M29 12 H35 V20 H43 V26 H35 V34 H29 V26 H21 V20 H29 Z" fill="rgba(255,255,255,0.25)"/>
+  <text x="32" y="38" text-anchor="middle" font-family="Plus Jakarta Sans, Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">DHG</text>
+</svg>

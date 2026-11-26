@@ -63,7 +63,6 @@ require_once 'includes/header.php';
         <!-- Header -->
         <div class="section-header">
             <div>
-                <span class="section-eyebrow">Hồ sơ nghề nghiệp</span>
                 <h1 class="section-title">Hồ sơ CV của tôi</h1>
                 <p class="section-desc">Quản lý và cập nhật các mẫu CV để ứng tuyển nhanh chóng vào các vị trí phù hợp.</p>
             </div>

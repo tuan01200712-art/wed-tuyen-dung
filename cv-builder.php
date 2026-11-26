@@ -130,12 +130,11 @@ $page_title = $cv_id > 0 ? 'Chỉnh Sửa CV' : 'Tạo CV Mới';
 require_once 'includes/header.php';
 ?>
 
-<section class="section" style="padding-top:40px;">
+<section class="section" style="padding-top:32px;">
     <div class="container">
         <!-- Header -->
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Trình soạn thảo trực quan</span>
                 <h1 class="section-title"><?= $cv_id > 0 ? 'Chỉnh sửa hồ sơ CV' : 'Tạo hồ sơ CV trực tuyến' ?></h1>
                 <p class="section-desc">Nội dung CV hiển thị song song theo thời gian thực ở khung bên trái khi bạn nhập liệu.</p>
             </div>
@@ -160,12 +159,12 @@ require_once 'includes/header.php';
                         <div class="cv-paper-name" id="prev_full_name"><?= htmlspecialchars($fields['full_name'] ?: 'Họ và tên của bạn') ?></div>
                         <div class="cv-paper-title" id="prev_title"><?= htmlspecialchars($fields['title'] ?: 'Vị trí mong muốn') ?></div>
                         <div class="cv-paper-contact">
-                            <span id="prev_email">📧 <?= htmlspecialchars($fields['email'] ?: 'email@domain.com') ?></span>
-                            <span id="prev_phone"><?= !empty($fields['phone']) ? '&middot; 📱 ' . htmlspecialchars($fields['phone']) : '' ?></span>
-                            <span id="prev_address"><?= !empty($fields['address']) ? '&middot; 📍 ' . htmlspecialchars($fields['address']) : '' ?></span>
+                            <span id="prev_email">Email: <?= htmlspecialchars($fields['email'] ?: 'email@domain.com') ?></span>
+                            <span id="prev_phone"><?= !empty($fields['phone']) ? '&middot; SĐT: ' . htmlspecialchars($fields['phone']) : '' ?></span>
+                            <span id="prev_address"><?= !empty($fields['address']) ? '&middot; ' . htmlspecialchars($fields['address']) : '' ?></span>
                         </div>
                         <div id="prev_link_wrap" style="margin-top:8px; display:<?= !empty($fields['cv_link']) ? 'block' : 'none' ?>;">
-                            <span style="font-size:12px; font-weight:700;">🔗 Link CV/Portfolio: </span>
+                            <span style="font-size:12px; font-weight:700;">Liên kết CV / Portfolio: </span>
                             <a href="<?= htmlspecialchars($fields['cv_link']) ?>" target="_blank" id="prev_link" style="font-size:12px; color:var(--ink); text-decoration:underline;">
                                 <?= htmlspecialchars($fields['cv_link']) ?>
                             </a>
@@ -204,7 +203,7 @@ require_once 'includes/header.php';
                     <form method="POST" id="cvForm">
                         <div class="form-group">
                             <label class="form-label" for="title">Tiêu đề CV / Vị trí hướng tới <span style="color:var(--status-danger-text);">*</span></label>
-                            <input type="text" id="title" name="title" class="form-control" placeholder="Ví dụ: Fullstack Developer / UI Designer" value="<?= htmlspecialchars($fields['title']) ?>" required oninput="updatePreview('prev_title', this.value)">
+                            <input type="text" id="title" name="title" class="form-control" placeholder="Ví dụ: Lập trình viên Backend PHP / Chuyên viên Marketing" value="<?= htmlspecialchars($fields['title']) ?>" required oninput="updatePreview('prev_title', this.value)">
                         </div>
 
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -215,19 +214,19 @@ require_once 'includes/header.php';
 
                             <div class="form-group">
                                 <label class="form-label" for="email">Địa chỉ Email <span style="color:var(--status-danger-text);">*</span></label>
-                                <input type="email" id="email" name="email" class="form-control" value="<?= htmlspecialchars($fields['email']) ?>" required oninput="updatePreview('prev_email', '📧 ' + this.value)">
+                                <input type="email" id="email" name="email" class="form-control" value="<?= htmlspecialchars($fields['email']) ?>" required oninput="updatePreview('prev_email', 'Email: ' + this.value)">
                             </div>
                         </div>
 
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                             <div class="form-group">
                                 <label class="form-label" for="phone">Số điện thoại</label>
-                                <input type="text" id="phone" name="phone" class="form-control" placeholder="0912 345 678" value="<?= htmlspecialchars($fields['phone']) ?>" oninput="updatePreview('prev_phone', this.value ? '&middot; 📱 ' + this.value : '')">
+                                <input type="text" id="phone" name="phone" class="form-control" placeholder="0912 345 678" value="<?= htmlspecialchars($fields['phone']) ?>" oninput="updatePreview('prev_phone', this.value ? '· SĐT: ' + this.value : '')">
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="address">Địa chỉ / Khu vực</label>
-                                <input type="text" id="address" name="address" class="form-control" placeholder="Hà Nội, Hồ Chí Minh..." value="<?= htmlspecialchars($fields['address']) ?>" oninput="updatePreview('prev_address', this.value ? '&middot; 📍 ' + this.value : '')">
+                                <input type="text" id="address" name="address" class="form-control" placeholder="Hà Nội, Hồ Chí Minh..." value="<?= htmlspecialchars($fields['address']) ?>" oninput="updatePreview('prev_address', this.value ? '· ' + this.value : '')">
                             </div>
                         </div>
 
@@ -248,18 +247,27 @@ require_once 'includes/header.php';
 
                         <div class="form-group">
                             <label class="form-label" for="skills">Kỹ năng chuyên môn (cách nhau bằng dấu phẩy)</label>
-                            <input type="text" id="skills" name="skills" class="form-control" placeholder="PHP, MySQL, JavaScript, Figma, REST API..." value="<?= htmlspecialchars($fields['skills']) ?>" oninput="updateSkillsPreview(this.value)">
+                            <input type="text" id="skills" name="skills" class="form-control" placeholder="PHP, MySQL, JavaScript, Excel, Giao tiếp, Quản lý dự án..." value="<?= htmlspecialchars($fields['skills']) ?>" oninput="updateSkillsPreview(this.value)">
+                            <div class="jf-suggestion-tags" id="skillQuickTags">
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'PHP / Laravel')">+ PHP / Laravel</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'JavaScript / ReactJS')">+ JavaScript / ReactJS</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'MySQL / SQL')">+ MySQL / SQL</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'Digital Marketing')">+ Digital Marketing</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'Kế toán tổng hợp')">+ Kế toán tổng hợp</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'Giao tiếp & Đàm phán')">+ Giao tiếp & Đàm phán</button>
+                                <button type="button" class="jf-suggestion-tag" onclick="appendCvTag('skills', 'Tin học văn phòng (Excel/Word)')">+ Tin học văn phòng</button>
+                            </div>
                         </div>
 
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                             <div class="form-group">
                                 <label class="form-label" for="certifications">Chứng chỉ / Giải thưởng</label>
-                                <input type="text" id="certifications" name="certifications" class="form-control" placeholder="AWS, TOEIC 800, Giải khuyến khích..." value="<?= htmlspecialchars($fields['certifications']) ?>">
+                                <input type="text" id="certifications" name="certifications" class="form-control" placeholder="Chọn hoặc nhập chứng chỉ..." value="<?= htmlspecialchars($fields['certifications']) ?>">
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label" for="languages">Ngoại ngữ</label>
-                                <input type="text" id="languages" name="languages" class="form-control" placeholder="Tiếng Anh, Tiếng Nhật..." value="<?= htmlspecialchars($fields['languages']) ?>">
+                                <input type="text" id="languages" name="languages" class="form-control" placeholder="Chọn hoặc nhập ngoại ngữ..." value="<?= htmlspecialchars($fields['languages']) ?>">
                             </div>
                         </div>
 
@@ -320,6 +328,65 @@ function updateSkillsPreview(value) {
         container.appendChild(span);
     });
 }
+
+function appendCvTag(inputId, tag) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const parts = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.includes(tag)) {
+        parts.push(tag);
+        input.value = parts.join(', ');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof jfInitAutocomplete !== 'function') return;
+
+    jfInitAutocomplete(document.getElementById('title'), [
+        'Lập trình viên Backend PHP / Laravel',
+        'Lập trình viên Frontend ReactJS',
+        'Lập trình viên Fullstack',
+        'Chuyên viên Thiết kế UI/UX',
+        'Chuyên viên Marketing số',
+        'Nhân viên Kinh doanh B2B',
+        'Kế toán tổng hợp',
+        'Chuyên viên Tuyển dụng nhân sự',
+        'Nhân viên Điều phối Logistics',
+        'Dược sĩ / Trình dược viên',
+        'Giảng viên Tiếng Anh',
+        'Kỹ sư Xây dựng'
+    ]);
+
+    jfInitAutocomplete(document.getElementById('address'), [
+        'Quận 1, TP.HCM', 'Quận 7, TP.HCM', 'TP. Thủ Đức, TP.HCM', 'TP.HCM',
+        'Cầu Giấy, Hà Nội', 'Hoàn Kiếm, Hà Nội', 'Nam Từ Liêm, Hà Nội', 'Hà Nội',
+        'Hải Châu, Đà Nẵng', 'Đà Nẵng',
+        'Thủ Dầu Một, Bình Dương', 'Biên Hòa, Đồng Nai',
+        'Ninh Kiều, Cần Thơ', 'Hải Phòng', 'Làm việc từ xa'
+    ]);
+
+    jfInitAutocomplete(document.getElementById('skills'), [
+        'PHP / Laravel', 'JavaScript / ReactJS', 'MySQL / PostgreSQL', 'HTML5 / CSS3',
+        'Figma / UI-UX', 'Digital Marketing / SEO', 'Facebook Ads / Google Ads',
+        'Kế toán tổng hợp / MISA', 'Phân tích tài chính', 'Bán hàng B2B / Đàm phán',
+        'Tuyển dụng & Phỏng vấn', 'Quản lý chuỗi cung ứng', 'Tin học văn phòng (Excel/Word)',
+        'Quản lý dự án Agile/Scrum', 'Giao tiếp & Thuyết trình'
+    ], { multi: true });
+
+    jfInitAutocomplete(document.getElementById('languages'), [
+        'Tiếng Anh (IELTS 6.5+)', 'Tiếng Anh (TOEIC 750+)', 'Tiếng Anh (Giao tiếp tốt)',
+        'Tiếng Nhật (JLPT N3)', 'Tiếng Nhật (JLPT N2)',
+        'Tiếng Trung (HSK 4)', 'Tiếng Trung (HSK 5)',
+        'Tiếng Hàn (TOPIK 4)', 'Tiếng Việt (Bản ngữ)'
+    ], { multi: true });
+
+    jfInitAutocomplete(document.getElementById('certifications'), [
+        'Chứng chỉ TOEIC 800+', 'Chứng chỉ IELTS 7.0', 'Chứng chỉ AWS Cloud Practitioner',
+        'Chứng chỉ Kế toán trưởng', 'Google Digital Marketing Certificate',
+        'Chứng chỉ Hành nghề Dược', 'Chứng chỉ giảng dạy TESOL'
+    ], { multi: true });
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>

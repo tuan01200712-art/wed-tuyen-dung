@@ -104,8 +104,13 @@ $categories_list = [
     <title><?= htmlspecialchars($page_title) ?> — JobFinder Doanh Nghiệp</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -115,7 +120,6 @@ $categories_list = [
     <main class="portal-main">
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Chỉnh sửa nội dung</span>
                 <h1 class="section-title">Cập nhật tin tuyển dụng</h1>
             </div>
             <a href="jobs.php" class="btn btn-secondary btn-sm">← Quay lại danh sách</a>

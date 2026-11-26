@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" fill="none">
+  <defs>
+    <linearGradient id="bagGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7EEDB0"/>
+      <stop offset="100%" stop-color="#16A36A"/>
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#AAFFCC"/>
+      <stop offset="60%" stop-color="#16A36A"/>
+    </linearGradient>
+    <linearGradient id="swishGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16A36A" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#16A36A"/>
+      <stop offset="100%" stop-color="#16A36A" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="planeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#99FF99"/>
+      <stop offset="100%" stop-color="#16A36A"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#16A36A" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- === ICON GROUP === -->
+  <g filter="url(#shadow)">
+    <!-- Briefcase body -->
+    <rect x="12" y="52" width="88" height="68" rx="14" fill="url(#bagGrad)"/>
+    <!-- Briefcase handle -->
+    <path d="M36 52 C36 38 76 38 76 52" stroke="url(#bagGrad)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <!-- Briefcase clasp -->
+    <rect x="47" y="78" width="18" height="12" rx="4" fill="white" opacity="0.9"/>
+    <!-- Bag highlight -->
+    <rect x="20" y="60" width="12" height="40" rx="4" fill="white" opacity="0.15"/>
+
+    <!-- Magnifying glass circle -->
+    <circle cx="72" cy="88" r="26" fill="url(#lensGrad)" stroke="white" stroke-width="3"/>
+    <!-- Inner circle (glass face) -->
+    <circle cx="72" cy="88" r="20" fill="white" opacity="0.15"/>
+    <!-- Person icon inside lens -->
+    <circle cx="72" cy="83" r="6" fill="white"/>
+    <path d="M60 103 C60 95 84 95 84 103" fill="white"/>
+    <!-- Magnifying handle -->
+    <line x1="92" y1="108" x2="106" y2="122" stroke="white" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- Sparkle dots (top-left of bag) -->
+    <circle cx="8" cy="46" r="3" fill="#99FF99"/>
+    <circle cx="22" cy="34" r="4" fill="#16A36A" opacity="0.7"/>
+    <circle cx="38" cy="28" r="2.5" fill="#99FF99" opacity="0.8"/>
+  </g>
+
+  <!-- Swish arc (swoosh under icon going right) -->
+  <path d="M 20 128 Q 56 142 100 132 Q 150 120 185 100" stroke="url(#swishGrad)" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Paper plane (top right of icon) -->
+  <g transform="translate(93,24) rotate(-25)">
+    <polygon points="0,0 22,8 0,16" fill="url(#planeGrad)" opacity="0.9"/>
+    <polygon points="0,8 10,10 8,16" fill="#16A36A" opacity="0.6"/>
+  </g>
+
+  <!-- === WORDMARK === -->
+  <!-- "Job" in dark forest -->
+  <text x="128" y="108" font-family="'Plus Jakarta Sans','Inter','Arial Rounded MT Bold',Arial,sans-serif" font-size="62" font-weight="800" fill="#0B4D30" letter-spacing="-2">Job</text>
+  <!-- "Finder" in emerald green -->
+  <text x="244" y="108" font-family="'Plus Jakarta Sans','Inter','Arial Rounded MT Bold',Arial,sans-serif" font-size="62" font-weight="800" fill="#16A36A" letter-spacing="-2">Finder</text>
+
+  <!-- Slogan -->
+  <text x="130" y="132" font-family="'Plus Jakarta Sans','Inter',Arial,sans-serif" font-size="16" font-weight="500" fill="#16A36A" letter-spacing="0.5">Tìm việc dễ dàng  •  Kết nối tương lai</text>
+</svg>

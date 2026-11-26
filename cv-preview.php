@@ -13,22 +13,54 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php?redirect=' . urlencode($_SERVER['REQUEST_URI']));
     exit;
 }
-$user_id = (int)$_SESSION['user_id'];
-$cv_id   = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$user_id   = (int)$_SESSION['user_id'];
+$user_role = $_SESSION['role'] ?? 'candidate';
+$cv_id     = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+$back_url = 'my-cvs.php';
+$back_label = '← Quay lại danh sách CV';
+if ($user_role === 'admin') {
+    $back_url = 'admin/applications.php';
+    $back_label = '← Quay lại Quản lý hồ sơ';
+} elseif ($user_role === 'employer') {
+    $back_url = 'employer/applications.php';
+    $back_label = '← Quay lại Quản lý hồ sơ';
+}
 
 if ($cv_id <= 0) {
-    header('Location: my-cvs.php');
+    header('Location: ' . $back_url);
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT * FROM cvs WHERE id = ? AND user_id = ?");
-$stmt->execute([$cv_id, $user_id]);
-$cv = $stmt->fetch();
+$cv = false;
+if ($user_role === 'admin') {
+    // Quản trị viên: được xem/in toàn bộ CV trên hệ thống
+    $stmt = $pdo->prepare("SELECT * FROM cvs WHERE id = ? LIMIT 1");
+    $stmt->execute([$cv_id]);
+    $cv = $stmt->fetch();
+} elseif ($user_role === 'employer') {
+    // Nhà tuyển dụng: được xem/in nếu ứng viên đã nộp CV này vào tin của nhà tuyển dụng
+    $stmt = $pdo->prepare("
+        SELECT c.*
+        FROM cvs c
+        INNER JOIN applications a ON a.cv_id = c.id
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE c.id = ? AND j.employer_id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$cv_id, $user_id]);
+    $cv = $stmt->fetch();
+} else {
+    // Ứng viên: chỉ xem/in CV thuộc quyền sở hữu của mình
+    $stmt = $pdo->prepare("SELECT * FROM cvs WHERE id = ? AND user_id = ? LIMIT 1");
+    $stmt->execute([$cv_id, $user_id]);
+    $cv = $stmt->fetch();
+}
 
 if (!$cv) {
-    $_SESSION['flash_message'] = 'Hồ sơ CV không tồn tại hoặc không thuộc quyền sở hữu của bạn.';
+    $_SESSION['flash_message'] = 'Hồ sơ CV không tồn tại hoặc bạn không có quyền truy cập.';
     $_SESSION['flash_type'] = 'danger';
-    header('Location: my-cvs.php');
+    header('Location: ' . $back_url);
     exit;
 }
 
@@ -55,6 +87,11 @@ function cv_section(string $heading, ?string $content, bool $is_skills = false):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($cv['full_name']) ?> — Hồ Sơ Nghề Nghiệp</title>
+    <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -129,8 +166,8 @@ function cv_section(string $heading, ?string $content, bool $is_skills = false):
 <body>
 
 <div class="cv-actions">
-    <a href="my-cvs.php" class="btn btn-back">← Quay lại danh sách CV</a>
-    <button onclick="window.print()" class="btn btn-print">🖨 In / Xuất PDF</button>
+    <a href="<?= htmlspecialchars($back_url) ?>" class="btn btn-back"><?= htmlspecialchars($back_label) ?></a>
+    <button onclick="window.print()" class="btn btn-print">In / Xuất PDF</button>
 </div>
 
 <article class="cv-sheet">
@@ -142,15 +179,15 @@ function cv_section(string $heading, ?string $content, bool $is_skills = false):
             <?= htmlspecialchars($cv['title']) ?>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:12px; font-size:13px; color:#76837e; margin-top:12px;">
-            <span>📧 <?= htmlspecialchars($cv['email']) ?></span>
+            <span>Email: <?= htmlspecialchars($cv['email']) ?></span>
             <?php if (!empty($cv['phone'])): ?>
-                <span>&middot;</span><span>📱 <?= htmlspecialchars($cv['phone']) ?></span>
+                <span>&middot;</span><span>SĐT: <?= htmlspecialchars($cv['phone']) ?></span>
             <?php endif; ?>
             <?php if (!empty($cv['address'])): ?>
-                <span>&middot;</span><span>📍 <?= htmlspecialchars($cv['address']) ?></span>
+                <span>&middot;</span><span><?= htmlspecialchars($cv['address']) ?></span>
             <?php endif; ?>
             <?php if (!empty($cv['cv_link'])): ?>
-                <span>&middot;</span><span>🔗 <a href="<?= htmlspecialchars($cv['cv_link']) ?>" target="_blank" style="color:#0b1f17; text-decoration:underline;">Link Portfolio/CV Online ↗</a></span>
+                <span>&middot;</span><span><a href="<?= htmlspecialchars($cv['cv_link']) ?>" target="_blank" style="color:#0b1f17; text-decoration:underline;">Link Portfolio/CV Online ↗</a></span>
             <?php endif; ?>
         </div>
     </header>

@@ -25,7 +25,7 @@ $role = 'candidate';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    $email = mb_strtolower(trim($_POST['email'] ?? ''), 'UTF-8');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     $role = in_array($_POST['role'] ?? 'candidate', ['candidate', 'employer']) ? $_POST['role'] : 'candidate';
@@ -108,8 +108,10 @@ require_once 'includes/header.php';
 <section class="section" style="padding-top:40px;">
     <div class="container" style="max-width:540px;">
         <div class="section-header" style="text-align:center; display:block; margin-bottom:28px;">
-            <span class="section-eyebrow">Tài khoản mới</span>
-            <h1 class="section-title" style="font-size:28px;">Đăng ký JobFinder</h1>
+            <div style="display:flex; justify-content:center; margin-bottom:14px;">
+                <img src="assets/images/logo.svg" alt="JobFinder" height="44" style="height:44px; width:auto;">
+            </div>
+            <h1 class="section-title" style="font-size:28px;">Đăng ký tài khoản JobFinder</h1>
             <p class="section-desc" style="font-size:14px;">Bắt đầu tìm việc hoặc kết nối ứng viên tài năng.</p>
         </div>
 
@@ -164,13 +166,25 @@ require_once 'includes/header.php';
                 <!-- Mật khẩu -->
                 <div class="form-group">
                     <label class="form-label" for="password">Mật khẩu *</label>
-                    <input type="password" id="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự..." required>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự..." required>
+                        <button type="button" class="password-toggle-btn" aria-label="Hiện mật khẩu">
+                            <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Xác nhận mật khẩu -->
                 <div class="form-group">
                     <label class="form-label" for="confirm_password">Xác nhận mật khẩu *</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu..." required>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Nhập lại mật khẩu..." required>
+                        <button type="button" class="password-toggle-btn" aria-label="Hiện mật khẩu">
+                            <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; margin-top:10px;">

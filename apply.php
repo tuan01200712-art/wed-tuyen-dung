@@ -67,6 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cover_letter = trim($_POST['cover_letter'] ?? '');
     $post_cv_id = !empty($_POST['cv_id']) ? (int)$_POST['cv_id'] : null;
 
+    if ($post_cv_id !== null) {
+        // Xác minh CV thuộc về user hiện tại (hoặc để NULL nếu không hợp lệ)
+        $chk_cv = $pdo->prepare("SELECT id FROM cvs WHERE id = ? AND user_id = ? LIMIT 1");
+        $chk_cv->execute([$post_cv_id, $user_id]);
+        if (!$chk_cv->fetch()) {
+            $post_cv_id = null;
+        }
+    }
+
     if (empty($cover_letter)) {
         $errors[] = 'Vui lòng viết một vài dòng thư giới thiệu ngắn về bản thân và lý do bạn phù hợp với công việc.';
     }
@@ -75,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $insert_stmt = $pdo->prepare("
                 INSERT INTO applications (user_id, job_id, cv_id, cover_letter, status, created_at)
-                VALUES (:user_id, :job_id, :cv_id, :cover_letter, 'Đã nộp hồ sơ', NOW())
+                VALUES (:user_id, :job_id, :cv_id, :cover_letter, 'new', NOW())
             ");
             $insert_stmt->execute([
                 ':user_id'      => $user_id,
@@ -84,12 +93,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':cover_letter' => $cover_letter
             ]);
 
+            if (!empty($job['employer_id'])) {
+                create_notification(
+                    $pdo,
+                    (int)$job['employer_id'],
+                    'Hồ sơ ứng tuyển mới',
+                    "Ứng viên {$user_name} vừa ứng tuyển vị trí {$job['title']}.",
+                    'employer/applications.php'
+                );
+            }
+
             $_SESSION['flash_message'] = 'Nộp hồ sơ thành công! Nhà tuyển dụng sẽ xem xét và phản hồi trong thời gian sớm nhất.';
             $_SESSION['flash_type'] = 'success';
             header('Location: my-applications.php');
             exit;
         } catch (PDOException $e) {
-            $errors[] = 'Đã xảy ra lỗi khi lưu hồ sơ. Vui lòng thử lại sau.';
+            $errors[] = 'Lỗi lưu hồ sơ ứng tuyển: ' . $e->getMessage();
         }
     }
 }
@@ -101,7 +120,6 @@ require_once 'includes/header.php';
     <div class="container" style="max-width:760px;">
         <!-- Header tóm tắt vị trí -->
         <div style="background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--line); padding:28px; margin-bottom:28px;">
-            <span class="section-eyebrow">Ứng tuyển trực tiếp</span>
             <h1 style="font-size:24px; font-weight:800; letter-spacing:-0.025em; color:var(--ink); margin-bottom:6px;">
                 <?php echo htmlspecialchars($job['title']); ?>
             </h1>

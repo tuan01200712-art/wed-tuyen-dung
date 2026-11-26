@@ -1,180 +1,335 @@
 <?php
 /**
- * ============================================================
  * FILE: jobs.php
- * MÔ TẢ: Danh sách việc làm tuyển dụng — Chuẩn Apple Design
- * ============================================================
+ * Danh sách việc làm — Bộ lọc 2 cột, logo công ty, gợi ý chức danh
  */
 
 require_once 'config/database.php';
 
-$page_title = 'Khám Phá Việc Làm';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-$keyword  = trim($_GET['keyword'] ?? '');
-$location = trim($_GET['location'] ?? '');
-$category = trim($_GET['category'] ?? '');
+$page_title = 'Tìm Kiếm Việc Làm';
 
-$sql = "SELECT * FROM jobs WHERE status = 'active'";
+$keyword      = trim($_GET['keyword'] ?? '');
+$location     = trim($_GET['location'] ?? '');
+$category     = trim($_GET['category'] ?? '');
+$experience   = trim($_GET['experience'] ?? '');
+$job_type     = trim($_GET['job_type'] ?? '');
+$salary_range = trim($_GET['salary_range'] ?? '');
+$sort         = trim($_GET['sort'] ?? 'newest');
+$page         = max(1, (int)($_GET['page'] ?? 1));
+$per_page     = 8;
+$offset       = ($page - 1) * $per_page;
+
+$where = " WHERE status = 'active'";
 $params = [];
 
 if (!empty($keyword)) {
-    $sql .= " AND (title LIKE :keyword OR company LIKE :keyword OR description LIKE :keyword)";
+    $where .= " AND (title LIKE :keyword OR company LIKE :keyword OR description LIKE :keyword)";
     $params[':keyword'] = "%{$keyword}%";
 }
-
 if (!empty($location)) {
-    $sql .= " AND location = :location";
-    $params[':location'] = $location;
+    $where .= " AND location LIKE :location";
+    $params[':location'] = "%{$location}%";
 }
-
 if (!empty($category)) {
-    $sql .= " AND category = :category";
+    $where .= " AND category = :category";
     $params[':category'] = $category;
 }
+if (!empty($experience)) {
+    $where .= " AND experience = :experience";
+    $params[':experience'] = $experience;
+}
+if (!empty($job_type)) {
+    $where .= " AND job_type = :job_type";
+    $params[':job_type'] = $job_type;
+}
+if (!empty($salary_range)) {
+    if ($salary_range === 'under_10') {
+        $where .= " AND salary_value > 0 AND salary_value < 10";
+    } elseif ($salary_range === '10_20') {
+        $where .= " AND salary_value >= 10 AND salary_value <= 20";
+    } elseif ($salary_range === '20_30') {
+        $where .= " AND salary_value > 20 AND salary_value <= 30";
+    } elseif ($salary_range === 'over_30') {
+        $where .= " AND salary_value > 30";
+    } elseif ($salary_range === 'negotiable') {
+        $where .= " AND (salary LIKE '%Thỏa thuận%' OR salary_value = 0 OR salary_value IS NULL)";
+    }
+}
 
-$sql .= " ORDER BY created_at DESC";
+$order_by = " ORDER BY is_featured DESC, created_at DESC";
+if ($sort === 'salary_desc') {
+    $order_by = " ORDER BY salary_value DESC, created_at DESC";
+} elseif ($sort === 'views') {
+    $order_by = " ORDER BY views DESC, created_at DESC";
+} elseif ($sort === 'newest') {
+    $order_by = " ORDER BY created_at DESC";
+}
 
 try {
+    $cnt_stmt = $pdo->prepare("SELECT COUNT(*) FROM jobs" . $where);
+    $cnt_stmt->execute($params);
+    $total_results = (int)$cnt_stmt->fetchColumn();
+    $total_pages = max(1, (int)ceil($total_results / $per_page));
+    if ($page > $total_pages) {
+        $page = $total_pages;
+        $offset = ($page - 1) * $per_page;
+    }
+
+    $sql = "SELECT * FROM jobs" . $where . $order_by . " LIMIT {$per_page} OFFSET {$offset}";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $jobs = $stmt->fetchAll();
-    $total_results = count($jobs);
 } catch (PDOException $e) {
     $jobs = [];
     $total_results = 0;
+    $total_pages = 1;
 }
 
-try {
-    $loc_stmt = $pdo->query("SELECT DISTINCT location FROM jobs WHERE status = 'active' ORDER BY location ASC");
-    $locations_list = $loc_stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {
-    $locations_list = [];
+$saved_job_ids = [];
+if (isset($_SESSION['user_id'])) {
+    try {
+        $s_stmt = $pdo->prepare("SELECT job_id FROM saved_jobs WHERE user_id = ?");
+        $s_stmt->execute([$_SESSION['user_id']]);
+        $saved_job_ids = $s_stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (PDOException $e) {}
 }
 
-try {
-    $cat_stmt = $pdo->query("SELECT DISTINCT category FROM jobs WHERE status = 'active' ORDER BY category ASC");
-    $categories_list = $cat_stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {
-    $categories_list = [];
+$categories_list = [];
+foreach (get_categories($pdo) as $c) {
+    $categories_list[] = $c['name'];
+}
+
+$locations_list   = ['TP.HCM', 'Hà Nội', 'Đà Nẵng', 'Bình Dương', 'Đồng Nai', 'Cần Thơ', 'Hải Phòng', 'Làm việc từ xa'];
+$experiences_list = ['Không yêu cầu', 'Dưới 1 năm', '1 - 2 năm', '2 - 3 năm', '3 - 5 năm', 'Trên 5 năm'];
+$job_types_list   = ['Toàn thời gian', 'Bán thời gian', 'Thực tập', 'Làm việc từ xa', 'Linh hoạt'];
+
+function build_jobs_url($overrides = []) {
+    $q = array_merge($_GET, $overrides);
+    foreach ($q as $k => $v) {
+        if ($v === '' || $v === null) unset($q[$k]);
+    }
+    return 'jobs.php' . (!empty($q) ? '?' . http_build_query($q) : '');
 }
 
 require_once 'includes/header.php';
 ?>
 
-<section class="section" style="padding-top:48px;">
+<section class="section section--sm" style="padding-top:32px;">
     <div class="container">
-        <!-- Tiêu đề trang -->
-        <div class="section-header" style="margin-bottom:28px;">
+        <div class="section-header" style="margin-bottom:24px;">
             <div>
-                <span class="section-eyebrow">Khám phá cơ hội</span>
-                <h1 class="section-title">Danh sách việc làm</h1>
-                <p class="section-desc">
-                    Hiện có <strong><?php echo $total_results; ?></strong> vị trí tuyển dụng phù hợp với tiêu chí của bạn.
+                <h1 class="section-title" style="font-size:26px;">Tìm kiếm việc làm</h1>
+                <p class="section-desc" style="font-size:14px; margin-top:4px;">
+                    Hiển thị <strong class="mono"><?php echo number_format($total_results); ?></strong> việc làm phù hợp
                 </p>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label for="sortSelect" style="font-size:13px; font-weight:600; color:var(--muted);">Sắp xếp:</label>
+                <select id="sortSelect" class="form-control form-select" style="width:auto; padding:8px 34px 8px 12px; font-size:13px;" onchange="location.href=this.value;">
+                    <option value="<?php echo htmlspecialchars(build_jobs_url(['sort' => 'newest', 'page' => 1])); ?>" <?php echo ($sort === 'newest') ? 'selected' : ''; ?>>Mới nhất</option>
+                    <option value="<?php echo htmlspecialchars(build_jobs_url(['sort' => 'salary_desc', 'page' => 1])); ?>" <?php echo ($sort === 'salary_desc') ? 'selected' : ''; ?>>Lương cao nhất</option>
+                    <option value="<?php echo htmlspecialchars(build_jobs_url(['sort' => 'views', 'page' => 1])); ?>" <?php echo ($sort === 'views') ? 'selected' : ''; ?>>Xem nhiều nhất</option>
+                </select>
             </div>
         </div>
 
-        <!-- Khung tìm kiếm & Bộ lọc -->
-        <div class="smart-search-card" style="margin-bottom: 28px;">
-            <form action="jobs.php" method="GET" class="search-form-row" style="grid-template-columns: 1.5fr 1fr 1fr auto;">
-                <div class="search-field">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" name="keyword" class="search-input" placeholder="Tên công việc, kỹ năng, công ty..." value="<?php echo htmlspecialchars($keyword); ?>">
-                </div>
-
-                <div class="search-field">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <select name="location" class="search-select">
-                        <option value="">Tất cả địa điểm</option>
-                        <?php foreach ($locations_list as $loc): ?>
-                            <option value="<?php echo htmlspecialchars($loc); ?>" <?php echo ($location === $loc) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($loc); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div class="search-field">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    <select name="category" class="search-select">
-                        <option value="">Tất cả ngành nghề</option>
-                        <?php foreach ($categories_list as $cat): ?>
-                            <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo ($category === $cat) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($cat); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <div style="display:flex; gap:8px;">
-                    <button type="submit" class="btn btn-primary">Lọc việc làm</button>
-                    <?php if (!empty($keyword) || !empty($location) || !empty($category)): ?>
-                        <a href="jobs.php" class="btn btn-secondary">Đặt lại</a>
+        <div class="jobs-layout">
+            <aside class="jobs-sidebar">
+                <div class="jobs-sidebar-title">
+                    <span>Bộ lọc tìm kiếm</span>
+                    <?php if ($keyword || $location || $category || $salary_range || $experience || $job_type): ?>
+                        <a href="jobs.php" style="font-size:12px; font-weight:600; color:var(--brand);">Đặt lại</a>
                     <?php endif; ?>
                 </div>
-            </form>
-        </div>
 
-        <!-- Category Pills nhanh -->
-        <div class="category-pills" style="margin-bottom:28px;">
-            <a href="jobs.php" class="category-pill <?php echo (empty($category)) ? 'active' : ''; ?>">Tất cả</a>
-            <?php foreach ($categories_list as $cat): ?>
-                <a href="jobs.php?category=<?php echo urlencode($cat); ?><?php echo !empty($keyword) ? '&keyword='.urlencode($keyword) : ''; ?><?php echo !empty($location) ? '&location='.urlencode($location) : ''; ?>" 
-                   class="category-pill <?php echo ($category === $cat) ? 'active' : ''; ?>">
-                    <?php echo htmlspecialchars($cat); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
+                <form action="jobs.php" method="GET">
+                    <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort); ?>">
 
-        <!-- Lưới danh sách công việc -->
-        <div class="job-grid">
-            <?php if (!empty($jobs)): ?>
-                <?php foreach ($jobs as $job): 
-                    $company_initial = mb_strtoupper(mb_substr($job['company'], 0, 2));
-                ?>
-                    <div class="job-card">
-                        <div>
-                            <div class="job-card__header">
-                                <div class="job-card__avatar">
-                                    <?php echo htmlspecialchars($company_initial); ?>
-                                </div>
-                                <div class="job-card__info">
-                                    <h3 class="job-card__title">
-                                        <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>">
-                                            <?php echo htmlspecialchars($job['title']); ?>
-                                        </a>
-                                    </h3>
-                                    <div class="job-card__company"><?php echo htmlspecialchars($job['company']); ?></div>
-                                </div>
-                            </div>
-
-                            <div class="job-card__chips">
-                                <span class="chip"><?php echo htmlspecialchars($job['location']); ?></span>
-                                <span class="chip"><?php echo htmlspecialchars($job['job_type']); ?></span>
-                                <span class="chip"><?php echo htmlspecialchars($job['experience']); ?></span>
-                                <span class="chip"><?php echo htmlspecialchars($job['category']); ?></span>
-                            </div>
-                        </div>
-
-                        <div class="job-card__footer">
-                            <div class="job-card__salary">
-                                <?php echo htmlspecialchars($job['salary']); ?>
-                            </div>
-                            <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>" class="btn btn-secondary btn-sm">
-                                Chi tiết →
-                            </a>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label" for="fKeyword">Từ khóa</label>
+                        <input type="text" id="fKeyword" name="keyword" class="form-control" placeholder="Vị trí, công ty..." value="<?php echo htmlspecialchars($keyword); ?>" autocomplete="off">
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div style="grid-column: 1 / -1; padding: 64px 20px; background: var(--surface); border-radius: var(--radius-xl); text-align: center; border: 1px solid var(--line);">
-                    <h3 style="font-size:20px; font-weight:700; margin-bottom:8px;">Không tìm thấy kết quả phù hợp</h3>
-                    <p class="text-muted" style="margin-bottom:20px;">Vui lòng thử tìm kiếm với từ khóa khác hoặc bỏ các bộ lọc đang chọn.</p>
-                    <a href="jobs.php" class="btn btn-secondary btn-sm">Xem tất cả công việc</a>
+
+                    <div class="form-group">
+                        <label class="form-label" for="fCategory">Ngành nghề</label>
+                        <select id="fCategory" name="category" class="form-control form-select">
+                            <option value="">Tất cả ngành nghề</option>
+                            <?php foreach ($categories_list as $cat): ?>
+                                <option value="<?php echo htmlspecialchars($cat); ?>" <?php echo ($category === $cat) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($cat); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="fLocation">Địa điểm</label>
+                        <select id="fLocation" name="location" class="form-control form-select">
+                            <option value="">Tất cả địa điểm</option>
+                            <?php foreach ($locations_list as $loc): ?>
+                                <option value="<?php echo htmlspecialchars($loc); ?>" <?php echo ($location === $loc) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($loc); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="fSalary">Mức lương</label>
+                        <select id="fSalary" name="salary_range" class="form-control form-select">
+                            <option value="">Tất cả mức lương</option>
+                            <option value="under_10" <?php echo ($salary_range === 'under_10') ? 'selected' : ''; ?>>Dưới 10 triệu</option>
+                            <option value="10_20" <?php echo ($salary_range === '10_20') ? 'selected' : ''; ?>>10 – 20 triệu</option>
+                            <option value="20_30" <?php echo ($salary_range === '20_30') ? 'selected' : ''; ?>>20 – 30 triệu</option>
+                            <option value="over_30" <?php echo ($salary_range === 'over_30') ? 'selected' : ''; ?>>Trên 30 triệu</option>
+                            <option value="negotiable" <?php echo ($salary_range === 'negotiable') ? 'selected' : ''; ?>>Thỏa thuận</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="fExp">Kinh nghiệm</label>
+                        <select id="fExp" name="experience" class="form-control form-select">
+                            <option value="">Tất cả kinh nghiệm</option>
+                            <?php foreach ($experiences_list as $exp): ?>
+                                <option value="<?php echo htmlspecialchars($exp); ?>" <?php echo ($experience === $exp) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($exp); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="fType">Hình thức làm việc</label>
+                        <select id="fType" name="job_type" class="form-control form-select">
+                            <option value="">Tất cả hình thức</option>
+                            <?php foreach ($job_types_list as $jt): ?>
+                                <option value="<?php echo htmlspecialchars($jt); ?>" <?php echo ($job_type === $jt) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($jt); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Áp dụng bộ lọc</button>
+                </form>
+            </aside>
+
+            <div>
+                <div class="jobs-list-grid">
+                    <?php if (!empty($jobs)): ?>
+                        <?php foreach ($jobs as $job):
+                            $is_saved = in_array($job['id'], $saved_job_ids);
+                        ?>
+                            <div class="job-card">
+                                <div>
+                                    <div class="job-card__header">
+                                        <?php echo render_company_logo($job['company'], $job['company_logo'] ?? '', '', 44); ?>
+                                        <div class="job-card__info">
+                                            <h3 class="job-card__title" title="<?php echo htmlspecialchars($job['title']); ?>">
+                                                <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>">
+                                                    <?php echo htmlspecialchars($job['title']); ?>
+                                                </a>
+                                            </h3>
+                                            <div class="job-card__company"><?php echo htmlspecialchars($job['company']); ?></div>
+                                        </div>
+                                        <button type="button"
+                                                class="job-save-btn <?php echo $is_saved ? 'saved' : ''; ?>"
+                                                data-job-id="<?php echo (int)$job['id']; ?>"
+                                                onclick="toggleCardSave(this, <?php echo (int)$job['id']; ?>)"
+                                                title="<?php echo $is_saved ? 'Bỏ lưu' : 'Lưu tin'; ?>">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="<?php echo $is_saved ? 'currentColor' : 'none'; ?>" stroke="currentColor" stroke-width="2">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div class="job-card__chips" style="margin-top:14px;">
+                                        <span class="chip chip--brand mono"><?php echo htmlspecialchars($job['salary']); ?></span>
+                                        <span class="chip"><?php echo htmlspecialchars($job['location']); ?></span>
+                                        <span class="chip"><?php echo htmlspecialchars($job['experience']); ?></span>
+                                    </div>
+                                </div>
+
+                                <div class="job-card__footer">
+                                    <span style="font-size:12px; color:var(--muted);"><?php echo htmlspecialchars($job['job_type']); ?></span>
+                                    <a href="job-detail.php?id=<?php echo (int)$job['id']; ?>" class="btn btn-secondary btn-xs">Chi tiết →</a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="grid-column:1/-1; padding:56px 24px; background:var(--surface); border-radius:var(--radius-lg); text-align:center; border:1px solid var(--line);">
+                            <h3 style="font-size:18px; margin-bottom:8px;">Không tìm thấy việc làm phù hợp</h3>
+                            <p class="text-muted" style="margin-bottom:18px; font-size:14px;">Thử thay đổi từ khóa hoặc xóa bớt tiêu chí lọc.</p>
+                            <a href="jobs.php" class="btn btn-secondary btn-sm">Xem tất cả việc làm</a>
+                        </div>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
+
+                <?php if ($total_pages > 1): ?>
+                    <div class="pagination-bar">
+                        <a href="<?php echo htmlspecialchars(build_jobs_url(['page' => max(1, $page - 1)])); ?>" class="page-btn <?php echo ($page <= 1) ? 'disabled' : ''; ?>">← Trước</a>
+                        <?php for ($p = 1; $p <= $total_pages; $p++): ?>
+                            <a href="<?php echo htmlspecialchars(build_jobs_url(['page' => $p])); ?>" class="page-btn <?php echo ($p === $page) ? 'active' : ''; ?>"><?php echo $p; ?></a>
+                        <?php endfor; ?>
+                        <a href="<?php echo htmlspecialchars(build_jobs_url(['page' => min($total_pages, $page + 1)])); ?>" class="page-btn <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">Sau →</a>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof jfInitAutocomplete === 'function') {
+        jfInitAutocomplete(document.getElementById('fKeyword'), [
+            'Lập trình viên Backend PHP / Laravel',
+            'Lập trình viên Frontend ReactJS',
+            'Kỹ sư DevOps / Cloud',
+            'Chuyên viên Thiết kế UI/UX',
+            'Chuyên viên Marketing số',
+            'Nhân viên Kinh doanh B2B',
+            'Chuyên viên Kế toán tổng hợp',
+            'Chuyên viên Tuyển dụng nhân sự',
+            'Nhân viên Điều phối Logistics',
+            'Dược sĩ Lâm sàng',
+            'Giảng viên Tiếng Anh',
+            'Kỹ sư Xây dựng',
+            'Chuyên viên Pháp chế doanh nghiệp'
+        ]);
+    }
+});
+
+function toggleCardSave(btn, jobId) {
+    <?php if (isset($_SESSION['user_id'])): ?>
+    btn.disabled = true;
+    const fd = new FormData();
+    fd.append('action', 'ajax_toggle');
+    fd.append('job_id', jobId);
+
+    fetch('saved-jobs.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.status === 'success') {
+                const svg = btn.querySelector('svg');
+                btn.classList.toggle('saved', !!data.saved);
+                if (svg) svg.setAttribute('fill', data.saved ? 'currentColor' : 'none');
+                if (typeof updateSavedBadge === 'function' && typeof data.saved_count !== 'undefined') {
+                    updateSavedBadge(data.saved_count);
+                }
+                if (window.showToast) window.showToast(data.message, 'success');
+            }
+        }).catch(() => { btn.disabled = false; });
+    <?php else: ?>
+    if (window.showToast) window.showToast('Vui lòng đăng nhập để lưu việc làm.', 'warning');
+    setTimeout(function() { window.location.href = 'login.php?redirect=' + encodeURIComponent('jobs.php'); }, 700);
+    <?php endif; ?>
+}
+</script>
 
 <?php require_once 'includes/footer.php'; ?>

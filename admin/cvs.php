@@ -55,8 +55,13 @@ $total_cvs = count($cvs);
     <title><?= htmlspecialchars($page_title) ?> — JobFinder Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -66,7 +71,6 @@ $total_cvs = count($cvs);
     <main class="portal-main">
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Dữ liệu ứng viên</span>
                 <h1 class="section-title">Danh sách hồ sơ CV trực tuyến</h1>
                 <p class="section-desc">Tổng cộng <strong><?= $total_cvs ?></strong> hồ sơ CV được ứng viên khởi tạo trên hệ thống.</p>
             </div>
@@ -128,9 +132,9 @@ $total_cvs = count($cvs);
                                         <div style="font-size:11px; color:var(--muted);">Tài khoản: <?= htmlspecialchars($c['account_email']) ?></div>
                                     </td>
                                     <td class="text-muted text-sm">
-                                        <div>📧 <?= htmlspecialchars($c['email']) ?></div>
+                                        <div>Email: <?= htmlspecialchars($c['email']) ?></div>
                                         <?php if (!empty($c['phone'])): ?>
-                                            <div>📞 <?= htmlspecialchars($c['phone']) ?></div>
+                                            <div>SĐT: <?= htmlspecialchars($c['phone']) ?></div>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -153,7 +157,7 @@ $total_cvs = count($cvs);
                                     <td>
                                         <?php if (!empty($c['cv_link'])): ?>
                                             <a href="<?= htmlspecialchars($c['cv_link']) ?>" target="_blank" rel="noopener noreferrer" class="chip" style="color:var(--ink); font-weight:600; text-decoration:none;">
-                                                🔗 Link ngoài ↗
+                                                Link ngoài ↗
                                             </a>
                                         <?php else: ?>
                                             <span class="text-muted text-sm">—</span>

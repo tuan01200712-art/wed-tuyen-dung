@@ -76,8 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?= htmlspecialchars($page_title) ?> — JobFinder Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <!-- Favicon & Brand Icons -->
+    <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
@@ -87,7 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="portal-main">
         <div class="section-header" style="margin-bottom:28px;">
             <div>
-                <span class="section-eyebrow">Quản trị người dùng</span>
                 <h1 class="section-title">Thêm tài khoản mới</h1>
                 <p class="section-desc">Khởi tạo trực tiếp tài khoản Ứng viên, Doanh nghiệp hoặc Quản trị viên.</p>
             </div>
@@ -115,7 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="form-group">
                         <label class="form-label" for="password">Mật khẩu khởi tạo <span style="color:var(--status-danger-text);">*</span></label>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required>
+                            <button type="button" class="password-toggle-btn" aria-label="Hiện mật khẩu">
+                                <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -174,5 +184,6 @@ function toggleCompanyInput(role) {
 }
 </script>
 
+<script src="../assets/js/main.js?v=<?= time() ?>"></script>
 </body>
 </html>

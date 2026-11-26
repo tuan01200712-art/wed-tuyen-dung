@@ -3,9 +3,8 @@ $admin_current = basename($_SERVER['PHP_SELF']);
 ?>
 <aside class="admin-sidebar">
   <div class="admin-sidebar__logo">
-    <a href="../index.php" class="logo" style="color:var(--admin-text);">
-      <span class="logo-badge">JF</span>
-      Jobfinder
+    <a href="../index.php" class="logo" title="JobFinder">
+      <img src="../assets/images/logo-white.svg" alt="JobFinder Logo" class="logo-img logo-img--white" style="height:38px; max-width:162px;">
     </a>
     <span class="admin-badge">ADMIN</span>
   </div>
@@ -35,10 +34,21 @@ $admin_current = basename($_SERVER['PHP_SELF']);
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M19 21v-4"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14"/><path d="M9 9h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>
       Nhà tuyển dụng
     </a>
+    <a href="categories.php" class="admin-nav-item <?= ($admin_current === 'categories.php') ? 'active' : '' ?>">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/><circle cx="17" cy="18" r="3"/></svg>
+      Danh mục dữ liệu
+    </a>
+    <a href="reports.php" class="admin-nav-item <?= ($admin_current === 'reports.php') ? 'active' : '' ?>">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      Báo cáo & Thống kê
+    </a>
   </nav>
 
   <div class="admin-sidebar__footer">
-    <span><?= htmlspecialchars($_SESSION['user_name'] ?? 'Admin') ?></span>
-    <a href="../logout.php" style="color:var(--admin-muted); font-weight:600;">Đăng xuất ✕</a>
+    <div class="sidebar-footer-user"><?= htmlspecialchars($_SESSION['user_name'] ?? 'Quản trị viên') ?></div>
+    <div class="sidebar-footer-actions">
+      <a href="../index.php" class="sidebar-footer-btn">Về trang chủ</a>
+      <a href="../logout.php" class="sidebar-footer-btn sidebar-footer-btn--danger">Đăng xuất</a>
+    </div>
   </div>
 </aside>
