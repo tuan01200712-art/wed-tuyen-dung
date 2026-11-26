@@ -1,0 +1,18 @@
+# Cấu hình Database Localhost (XAMPP) — Lưu tạm để khôi phục khi chạy local
+
+- Host: 127.0.0.1 (hoặc localhost)
+- Port: 3306
+- Database: job_portal
+- User: root
+- Password: '' (rỗng)
+- Charset: utf8mb4
+
+Đoạn code PHP dùng cho XAMPP:
+```php
+$host = '127.0.0.1';
+$db   = 'job_portal';
+$user = 'root';
+$pass = '';
+$port = 3306;
+$charset = 'utf8mb4';
+```

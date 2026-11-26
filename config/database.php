@@ -18,10 +18,11 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-$host = '127.0.0.1'; // hoặc 'localhost'
-$db   = 'job_portal';
-$user = 'root';
-$pass = '';          // Mật khẩu mặc định của XAMPP là rỗng
+// Cấu hình môi trường InfinityFree
+$host = 'sql301.infinityfree.com';
+$db   = 'if0_43542723_jobfinder';
+$user = 'if0_43542723';
+$pass = 'ltcLinh23072007';
 $port = 3306;
 $charset = 'utf8mb4';
 
